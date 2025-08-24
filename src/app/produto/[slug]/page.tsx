@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, ExternalLink, Heart, Share2, ShoppingCart, Star, TrendingDown, TrendingUp } from 'lucide-react';
 import PriceHistory from '@/components/PriceHistory';
 import PriceAlert from '@/components/PriceAlert';
@@ -232,9 +233,11 @@ export default function ProductPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <img 
+              <Image 
                 src={product.image} 
                 alt={product.title}
+                width={400}
+                height={320}
                 className="w-full h-80 object-cover rounded-lg bg-gray-100"
               />
             </div>
