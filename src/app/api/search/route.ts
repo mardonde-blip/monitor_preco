@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     
     // Criar resumo dos menores preços por site
     const siteSummary = Object.entries(siteResults)
-      .filter(([_, data]) => data.cheapestProduct)
+      .filter(([, data]) => data.cheapestProduct)
       .map(([siteName, data]) => ({
         site: siteName,
         cheapestPrice: data.cheapestProduct.price,
