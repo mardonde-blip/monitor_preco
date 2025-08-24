@@ -329,8 +329,8 @@ export default function DiscountCoupons({ productTitle, store }: DiscountCoupons
           <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h5 className="font-medium text-blue-800 mb-2">💡 Como usar os cupons:</h5>
             <ol className="text-sm text-blue-700 space-y-1">
-              <li>1. Clique em "Copiar" no cupom desejado</li>
-              <li>2. Vá até a loja clicando em "Ir à loja"</li>
+              <li>1. Clique em &quot;Copiar&quot; no cupom desejado</li>
+              <li>2. Vá até a loja clicando em &quot;Ir à loja&quot;</li>
               <li>3. Adicione o produto ao carrinho</li>
               <li>4. Cole o código do cupom no checkout</li>
               <li>5. Aproveite o desconto! 🎉</li>

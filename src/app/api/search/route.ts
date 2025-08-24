@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
     const searchResults = await Promise.all(searchPromises);
     
     // Processar resultados para obter o menor preço de cada site
-    const siteResults: { [siteName: string]: any } = {};
-    const allValidResults: any[] = [];
+    const siteResults: { [siteName: string]: SearchResult } = {};
+    const allValidResults: SearchResult[] = [];
     
     searchResults.forEach((siteProducts, index) => {
       const siteName = sitesToSearch[index].name;
