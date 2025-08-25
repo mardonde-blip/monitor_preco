@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import { PriceScraper } from './scraper';
 import { TelegramNotifier } from './telegram';
 import { LocalStorage } from './storage';
@@ -8,7 +8,7 @@ export class PriceMonitorScheduler {
   private scraper: PriceScraper;
   private telegramNotifier: TelegramNotifier;
   private isRunning: boolean = false;
-  private cronJob: any | null = null;
+  private cronJob: ScheduledTask | null = null;
 
   constructor() {
     this.scraper = new PriceScraper();
@@ -77,7 +77,7 @@ export class PriceMonitorScheduler {
       // Scraper não precisa de inicialização explícita
       
       const results = await Promise.allSettled(
-        products.map(product => this.checkProductPrice(product, notificationSettings))
+        products.map(product => this.checkProductPrice(product))
       );
       
       await this.scraper.close();
@@ -96,8 +96,7 @@ export class PriceMonitorScheduler {
    * Verifica o preço de um produto específico
    */
   private async checkProductPrice(
-    product: Product, 
-    notificationSettings: NotificationSettings
+    product: Product
   ): Promise<void> {
     try {
       // Use automatic detection if selector is 'auto', otherwise use specific selector
@@ -133,7 +132,7 @@ export class PriceMonitorScheduler {
       const priceDropped = newPrice !== null && newPrice !== undefined && newPrice < product.initialPrice;
       
       if (priceDropped) {
-        await this.sendPriceAlert(updatedProduct, previousPrice);
+        await this.sendPriceAlert(updatedProduct);
       }
       
       console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (referência: R$ ${product.initialPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
@@ -150,7 +149,7 @@ export class PriceMonitorScheduler {
   /**
    * Envia alerta de preço via Telegram
    */
-  private async sendPriceAlert(product: Product, previousPrice?: number): Promise<void> {
+  private async sendPriceAlert(product: Product): Promise<void> {
     try {
       const notificationSettings = LocalStorage.getSettings();
       

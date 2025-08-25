@@ -1,5 +1,4 @@
-import puppeteer from 'puppeteer';
-import * as cheerio from 'cheerio';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -17,7 +16,7 @@ interface SearchResultItem {
 }
 
 export class PriceScraper {
-  private browser: any | null = null;
+  private browser: Browser | null = null;
   
   // Cache de seletores bem-sucedidos por domínio
   private selectorCache: Map<string, { selector: string; lastUsed: number; successCount: number }> = new Map();
@@ -541,7 +540,7 @@ export class PriceScraper {
   }
   
   // Estratégia avançada de detecção por domínio
-  private async tryDomainSpecificSelectors(page: any, domain: string): Promise<ScrapingResult> {
+  private async tryDomainSpecificSelectors(page: Page, domain: string): Promise<ScrapingResult> {
     const knownSelectors = this.knownSelectors.get(domain) || [];
     
     console.log(`🎯 Testando ${knownSelectors.length} seletores específicos para ${domain}`);
@@ -565,7 +564,7 @@ export class PriceScraper {
           }
         }
         this.logSelectorAttempt(domain, selector, false);
-      } catch (error) {
+      } catch {
         this.logSelectorAttempt(domain, selector, false);
         continue;
       }
@@ -575,7 +574,7 @@ export class PriceScraper {
   }
   
   // Estratégia de detecção por XPath
-  private async tryXPathSelectors(page: any, domain: string): Promise<ScrapingResult> {
+  private async tryXPathSelectors(page: Page, domain: string): Promise<ScrapingResult> {
     const xpathSelectors = [
       "//span[contains(@class, 'price') and contains(text(), 'R$')]",
       "//div[contains(@class, 'price') and contains(text(), 'R$')]",
@@ -609,7 +608,7 @@ export class PriceScraper {
           }
         }
         this.logSelectorAttempt(domain, `XPath: ${xpath}`, false);
-      } catch (error) {
+      } catch {
         this.logSelectorAttempt(domain, `XPath: ${xpath}`, false);
         continue;
       }
@@ -619,7 +618,7 @@ export class PriceScraper {
   }
   
   // Estratégia de detecção por atributos de dados
-  private async tryDataAttributeSelectors(page: any, domain: string): Promise<ScrapingResult> {
+  private async tryDataAttributeSelectors(page: Page, domain: string): Promise<ScrapingResult> {
     const dataAttributes = [
       '[data-price]',
       '[data-testid*="price"]',
@@ -662,7 +661,7 @@ export class PriceScraper {
           }
         }
         this.logSelectorAttempt(domain, selector, false);
-      } catch (error) {
+      } catch {
         this.logSelectorAttempt(domain, selector, false);
         continue;
       }
@@ -672,7 +671,7 @@ export class PriceScraper {
   }
   
   // Estratégia de análise semântica do DOM
-  private async trySemanticAnalysis(page: any, domain: string): Promise<ScrapingResult> {
+  private async trySemanticAnalysis(page: Page, domain: string): Promise<ScrapingResult> {
     try {
       const result = await page.evaluate(() => {
         const candidates = [];
@@ -755,7 +754,7 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 2: Busca inteligente por padrões de texto
-  private async intelligentPriceSearch(page: any): Promise<ScrapingResult> {
+  private async intelligentPriceSearch(page: Page): Promise<ScrapingResult> {
     try {
       // Busca por elementos que contenham padrões de preço em reais
       const pricePatterns = [
@@ -856,7 +855,7 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 3: Análise estrutural do DOM
-  private async structuralPriceAnalysis(page: any): Promise<ScrapingResult> {
+  private async structuralPriceAnalysis(page: Page): Promise<ScrapingResult> {
     try {
       // Busca por elementos com características típicas de preços
       const result = await page.evaluate(() => {
@@ -911,7 +910,7 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 4: Busca por texto contendo R$
-  private async searchByPriceText(page: any): Promise<ScrapingResult> {
+  private async searchByPriceText(page: Page): Promise<ScrapingResult> {
     try {
       const result = await page.evaluate(() => {
         const walker = document.createTreeWalker(
@@ -1104,9 +1103,9 @@ export class PriceScraper {
                 };
               }
             }
-          } catch (error) {
-            console.log(`⚠️ Seletor em cache falhou, removendo: ${cachedSelector}`);
-            this.removeCachedSelector(domain);
+          } catch {
+           console.log(`⚠️ Seletor em cache falhou, removendo: ${cachedSelector}`);
+           this.removeCachedSelector(domain);
           }
         }
       
@@ -1174,7 +1173,7 @@ export class PriceScraper {
               }
             }
             this.logSelectorAttempt(domain, selector, false);
-          } catch (error) {
+          } catch {
             this.logSelectorAttempt(domain, selector, false);
             continue;
           }
