@@ -590,10 +590,19 @@ export class PriceScraper {
     
     for (const xpath of xpathSelectors) {
       try {
-        const elements = await page.$x(xpath);
+        const priceTexts = await page.evaluate((xpathSelector: string) => {
+          const result = document.evaluate(xpathSelector, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+          const texts: string[] = [];
+          for (let i = 0; i < result.snapshotLength; i++) {
+            const node = result.snapshotItem(i);
+            if (node && node.textContent) {
+              texts.push(node.textContent);
+            }
+          }
+          return texts;
+        }, xpath);
         
-        for (const element of elements) {
-          const priceText = await page.evaluate((el: Element) => el.textContent || '', element);
+        for (const priceText of priceTexts) {
           const price = this.extractPrice(priceText);
           
           if (price !== null && price > 0 && price < 1000000) {
