@@ -2,8 +2,22 @@ import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { ScrapingResult } from '@/types';
 
+interface SearchResultItem {
+  title: string;
+  price: number;
+  originalPrice?: number;
+  discount?: string;
+  rating?: number;
+  reviews?: number;
+  image?: string;
+  url: string;
+  store: string;
+  combinedScore?: number;
+  relevanceScore?: number;
+}
+
 export class PriceScraper {
-  private browser: puppeteer.Browser | null = null;
+  private browser: any | null = null;
   
   // Cache de seletores bem-sucedidos por domínio
   private selectorCache: Map<string, { selector: string; lastUsed: number; successCount: number }> = new Map();
@@ -491,8 +505,8 @@ export class PriceScraper {
   }
   
   // Exportar todas as tentativas de seletores para análise
-  public exportSelectorAttempts(): Record<string, any> {
-    const export_data: Record<string, any> = {};
+  public exportSelectorAttempts(): Record<string, unknown> {
+    const export_data: Record<string, unknown> = {};
     
     for (const [domain, attempts] of this.selectorAttempts.entries()) {
       const stats = this.getSelectorStats(domain);
@@ -527,7 +541,7 @@ export class PriceScraper {
   }
   
   // Estratégia avançada de detecção por domínio
-  private async tryDomainSpecificSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
+  private async tryDomainSpecificSelectors(page: any, domain: string): Promise<ScrapingResult> {
     const knownSelectors = this.knownSelectors.get(domain) || [];
     
     console.log(`🎯 Testando ${knownSelectors.length} seletores específicos para ${domain}`);
@@ -536,7 +550,7 @@ export class PriceScraper {
       try {
         const element = await page.$(selector);
         if (element) {
-          const priceText = await page.evaluate(el => el.textContent || '', element);
+          const priceText = await page.evaluate((el: Element) => el.textContent || '', element);
           const price = this.extractPrice(priceText);
           
           if (price !== null && price > 0) {
@@ -561,7 +575,7 @@ export class PriceScraper {
   }
   
   // Estratégia de detecção por XPath
-  private async tryXPathSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
+  private async tryXPathSelectors(page: any, domain: string): Promise<ScrapingResult> {
     const xpathSelectors = [
       "//span[contains(@class, 'price') and contains(text(), 'R$')]",
       "//div[contains(@class, 'price') and contains(text(), 'R$')]",
@@ -580,7 +594,7 @@ export class PriceScraper {
         const elements = await page.$x(xpath);
         
         for (const element of elements) {
-          const priceText = await page.evaluate(el => el.textContent || '', element);
+          const priceText = await page.evaluate((el: Element) => el.textContent || '', element);
           const price = this.extractPrice(priceText);
           
           if (price !== null && price > 0 && price < 1000000) {
@@ -605,7 +619,7 @@ export class PriceScraper {
   }
   
   // Estratégia de detecção por atributos de dados
-  private async tryDataAttributeSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
+  private async tryDataAttributeSelectors(page: any, domain: string): Promise<ScrapingResult> {
     const dataAttributes = [
       '[data-price]',
       '[data-testid*="price"]',
@@ -629,7 +643,7 @@ export class PriceScraper {
         const elements = await page.$$(selector);
         
         for (const element of elements) {
-          const priceText = await page.evaluate(el => {
+          const priceText = await page.evaluate((el: Element) => {
             // Tenta obter o preço do conteúdo, atributo data-price, ou value
             return el.textContent || el.getAttribute('data-price') || el.getAttribute('data-value') || el.getAttribute('value') || '';
           }, element);
@@ -658,7 +672,7 @@ export class PriceScraper {
   }
   
   // Estratégia de análise semântica do DOM
-  private async trySemanticAnalysis(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
+  private async trySemanticAnalysis(page: any, domain: string): Promise<ScrapingResult> {
     try {
       const result = await page.evaluate(() => {
         const candidates = [];
@@ -741,7 +755,7 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 2: Busca inteligente por padrões de texto
-  private async intelligentPriceSearch(page: puppeteer.Page): Promise<ScrapingResult> {
+  private async intelligentPriceSearch(page: any): Promise<ScrapingResult> {
     try {
       // Busca por elementos que contenham padrões de preço em reais
       const pricePatterns = [
@@ -754,8 +768,7 @@ export class PriceScraper {
         const walker = document.createTreeWalker(
           document.body,
           NodeFilter.SHOW_TEXT,
-          null,
-          false
+          null
         );
         
         const textNodes = [];
@@ -843,7 +856,7 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 3: Análise estrutural do DOM
-  private async structuralPriceAnalysis(page: puppeteer.Page): Promise<ScrapingResult> {
+  private async structuralPriceAnalysis(page: any): Promise<ScrapingResult> {
     try {
       // Busca por elementos com características típicas de preços
       const result = await page.evaluate(() => {
@@ -898,14 +911,13 @@ export class PriceScraper {
   }
 
   // ESTRATÉGIA 4: Busca por texto contendo R$
-  private async searchByPriceText(page: puppeteer.Page): Promise<ScrapingResult> {
+  private async searchByPriceText(page: any): Promise<ScrapingResult> {
     try {
       const result = await page.evaluate(() => {
         const walker = document.createTreeWalker(
           document.body,
           NodeFilter.SHOW_TEXT,
-          null,
-          false
+          null
         );
         
         const candidates = [];
@@ -947,402 +959,16 @@ export class PriceScraper {
       return { success: false, error: `Erro na busca por texto: ${error}` };
     }
   }
-  
-  // ESTRATÉGIA 5: Detecção por XPath avançado
-  private async tryXPathSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-    const xpathSelectors = [
-      '//span[contains(@class, "price") and contains(text(), "R$")]',
-      '//div[contains(@class, "price") and contains(text(), "R$")]',
-      '//*[contains(@data-testid, "price")]',
-      '//*[contains(@aria-label, "preço") or contains(@aria-label, "price")]',
-      '//span[contains(text(), "R$") and string-length(text()) < 20]',
-      '//*[@class and contains(@class, "vtex") and contains(text(), "R$")]'
-    ];
-    
-    try {
-      for (const xpath of xpathSelectors) {
-        try {
-          const elements = await page.$x(xpath);
-          if (elements.length > 0) {
-            for (const element of elements) {
-              const text = await page.evaluate(el => el.textContent || '', element);
-              const price = this.extractPrice(text);
-              
-              if (price !== null && price > 0 && price < 1000000) {
-                console.log(`✅ Preço encontrado por XPath: ${xpath} - R$ ${price}`);
-                this.logSelectorAttempt(domain, xpath, true, price);
-                return {
-                  success: true,
-                  price,
-                  selector: xpath,
-                  strategy: 'xpath-selector'
-                };
-              }
-            }
-          }
-          this.logSelectorAttempt(domain, xpath, false);
-        } catch (error) {
-          this.logSelectorAttempt(domain, xpath, false);
-          continue;
-        }
-      }
-      
-      return { success: false, error: 'Nenhum XPath encontrou preços válidos' };
-    } catch (error) {
-      return { success: false, error: `Erro nos seletores XPath: ${error}` };
-    }
-  }
-  
-  // ESTRATÉGIA 6: Detecção por atributos de dados
-  private async tryDataAttributeSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-    const dataSelectors = [
-      '[data-testid*="price"]',
-      '[data-price]',
-      '[data-current-price]',
-      '[data-selling-price]',
-      '[data-product-price]',
-      '[data-value]',
-      '[data-amount]',
-      '[data-cost]',
-      '[aria-label*="preço"]',
-      '[aria-label*="price"]',
-      '[title*="preço"]',
-      '[title*="price"]'
-    ];
-    
-    try {
-      for (const selector of dataSelectors) {
-        try {
-          const element = await page.$(selector);
-          if (element) {
-            const text = await page.evaluate(el => el.textContent || el.getAttribute('data-price') || el.getAttribute('aria-label') || '', element);
-            const price = this.extractPrice(text);
-            
-            if (price !== null && price > 0 && price < 1000000) {
-              console.log(`✅ Preço encontrado por atributo: ${selector} - R$ ${price}`);
-              this.logSelectorAttempt(domain, selector, true, price);
-              return {
-                success: true,
-                price,
-                selector,
-                strategy: 'data-attribute'
-              };
-            }
-          }
-          this.logSelectorAttempt(domain, selector, false);
-        } catch (error) {
-          this.logSelectorAttempt(domain, selector, false);
-          continue;
-        }
-      }
-      
-      return { success: false, error: 'Nenhum atributo de dados encontrou preços válidos' };
-    } catch (error) {
-      return { success: false, error: `Erro nos atributos de dados: ${error}` };
-    }
-  }
-  
-  // ESTRATÉGIA 7: Análise semântica do DOM
-  private async trySemanticAnalysis(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-    try {
-      const result = await page.evaluate(() => {
-        const elements = document.querySelectorAll('*');
-        const candidates = [];
-        
-        for (const element of elements) {
-          const text = element.textContent?.trim() || '';
-          const className = element.className?.toString().toLowerCase() || '';
-          const id = element.id?.toLowerCase() || '';
-          const tagName = element.tagName.toLowerCase();
-          
-          // Critérios semânticos para identificar preços
-          const hasMoneySymbol = text.includes('R$') || text.includes('$');
-          const hasNumberPattern = /\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/.test(text);
-          const hasPriceKeywords = /price|valor|custo|money|amount|currency|preço/.test(className + ' ' + id);
-          const isInPriceContext = /product|item|buy|cart|checkout/.test(className + ' ' + id);
-          const hasLargeFont = window.getComputedStyle(element).fontSize;
-          const fontSizePx = parseFloat(hasLargeFont);
-          
-          // Sistema de pontuação semântica
-          let score = 0;
-          if (hasMoneySymbol) score += 5;
-          if (hasNumberPattern) score += 3;
-          if (hasPriceKeywords) score += 4;
-          if (isInPriceContext) score += 2;
-          if (fontSizePx > 16) score += 2;
-          if (tagName === 'span' || tagName === 'div') score += 1;
-          
-          if (score >= 6 && text.length < 50) {
-            candidates.push({
-              text: text,
-              score: score,
-              selector: this.generateSelector(element)
-            });
-          }
-        }
-        
-        return candidates.sort((a, b) => b.score - a.score).slice(0, 10);
-      });
-      
-      for (const candidate of result) {
-        const price = this.extractPrice(candidate.text);
-        if (price !== null && price > 0 && price < 1000000) {
-          console.log(`✅ Preço encontrado por análise semântica: ${candidate.text} - R$ ${price} (score: ${candidate.score})`);
-          this.logSelectorAttempt(domain, candidate.selector, true, price);
-          return {
-            success: true,
-            price,
-            selector: candidate.selector,
-            strategy: 'semantic-analysis'
-          };
-        }
-      }
-      
-      return { success: false, error: 'Análise semântica não encontrou preços válidos' };
-    } catch (error) {
-      return { success: false, error: `Erro na análise semântica: ${error}` };
-    }
-  }
-  
-  // Método auxiliar para gerar seletor CSS a partir de um elemento
-  private generateSelector(element: Element): string {
-     if (element.id) {
-       return `#${element.id}`;
-     }
-     
-     let selector = element.tagName.toLowerCase();
-     
-     if (element.className) {
-       const classes = element.className.toString().split(' ').filter(c => c.length > 0);
-       if (classes.length > 0) {
-         selector += '.' + classes.slice(0, 3).join('.');
-       }
-     }
-     
-     return selector;
-   }
-   
-   // ESTRATÉGIA 1: Seletores específicos do domínio
-   private async tryDomainSpecificSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-     const domainSelectors = this.knownSelectors.get(domain) || [];
-     
-     if (domainSelectors.length === 0) {
-       return { success: false, error: `Nenhum seletor específico para ${domain}` };
-     }
-     
-     console.log(`🎯 Testando ${domainSelectors.length} seletores específicos para ${domain}`);
-     
-     for (const selector of domainSelectors) {
-       try {
-         const element = await page.$(selector);
-         if (element) {
-           const text = await page.evaluate(el => el.textContent || '', element);
-           const price = this.extractPrice(text);
-           
-           if (price !== null && price > 0 && price < 1000000) {
-             console.log(`✅ Preço encontrado com seletor específico: ${selector} - R$ ${price}`);
-             this.logSelectorAttempt(domain, selector, true, price);
-             return {
-               success: true,
-               price,
-               selector,
-               strategy: 'domain-specific'
-             };
-           }
-         }
-         this.logSelectorAttempt(domain, selector, false);
-       } catch (error) {
-         this.logSelectorAttempt(domain, selector, false);
-         continue;
-       }
-     }
-     
-     return { success: false, error: 'Nenhum seletor específico do domínio funcionou' };
-   }
-   
-   // ESTRATÉGIA 2: Seletores XPath avançados
-   private async tryXPathSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-     const xpathSelectors = [
-       "//span[contains(@class, 'price') and contains(text(), 'R$')]",
-       "//div[contains(@class, 'price') and contains(text(), 'R$')]",
-       "//*[@data-price or @data-value][contains(text(), 'R$')]",
-       "//span[contains(@id, 'price')]",
-       "//div[contains(@id, 'price')]",
-       "//*[contains(@class, 'valor') and contains(text(), 'R$')]",
-       "//*[contains(@class, 'preco') and contains(text(), 'R$')]",
-       "//span[contains(text(), 'R$') and string-length(text()) < 20]"
-     ];
-     
-     console.log(`🔍 Testando ${xpathSelectors.length} seletores XPath avançados`);
-     
-     for (const xpath of xpathSelectors) {
-       try {
-         const elements = await page.$x(xpath);
-         if (elements.length > 0) {
-           for (const element of elements) {
-             const text = await page.evaluate(el => el.textContent || '', element);
-             const price = this.extractPrice(text);
-             
-             if (price !== null && price > 0 && price < 1000000) {
-               console.log(`✅ Preço encontrado com XPath: ${xpath} - R$ ${price}`);
-               this.logSelectorAttempt(domain, xpath, true, price);
-               return {
-                 success: true,
-                 price,
-                 selector: xpath,
-                 strategy: 'xpath-advanced'
-               };
-             }
-           }
-         }
-         this.logSelectorAttempt(domain, xpath, false);
-       } catch (error) {
-         this.logSelectorAttempt(domain, xpath, false);
-         continue;
-       }
-     }
-     
-     return { success: false, error: 'Nenhum seletor XPath funcionou' };
-   }
-   
-   // ESTRATÉGIA 3: Atributos de dados
-   private async tryDataAttributeSelectors(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-     const dataAttributes = [
-       'data-price',
-       'data-value',
-       'data-cost',
-       'data-amount',
-       'data-price-value',
-       'data-product-price',
-       'data-original-price',
-       'data-sale-price'
-     ];
-     
-     console.log(`🏷️ Testando ${dataAttributes.length} atributos de dados`);
-     
-     for (const attr of dataAttributes) {
-       try {
-         const elements = await page.$$(`[${attr}]`);
-         if (elements.length > 0) {
-           for (const element of elements) {
-             const attrValue = await page.evaluate((el, attribute) => {
-               return el.getAttribute(attribute);
-             }, element, attr);
-             
-             if (attrValue) {
-               const price = this.extractPrice(attrValue);
-               if (price !== null && price > 0 && price < 1000000) {
-                 console.log(`✅ Preço encontrado em atributo ${attr}: R$ ${price}`);
-                 this.logSelectorAttempt(domain, `[${attr}]`, true, price);
-                 return {
-                   success: true,
-                   price,
-                   selector: `[${attr}]`,
-                   strategy: 'data-attribute'
-                 };
-               }
-             }
-           }
-         }
-         this.logSelectorAttempt(domain, `[${attr}]`, false);
-       } catch (error) {
-         this.logSelectorAttempt(domain, `[${attr}]`, false);
-         continue;
-       }
-     }
-     
-     return { success: false, error: 'Nenhum atributo de dados funcionou' };
-   }
-   
-   // ESTRATÉGIA 4: Análise semântica do DOM
-   private async trySemanticAnalysis(page: puppeteer.Page, domain: string): Promise<ScrapingResult> {
-     try {
-       const result = await page.evaluate(() => {
-         const priceKeywords = ['price', 'preco', 'valor', 'cost', 'amount', 'currency'];
-         const currencySymbols = ['R$', '$', '€', '£'];
-         
-         const elements = Array.from(document.querySelectorAll('*'));
-         const candidates: Array<{element: Element, score: number, text: string}> = [];
-         
-         for (const element of elements) {
-           let score = 0;
-           const text = element.textContent || '';
-           const className = element.className.toString().toLowerCase();
-           const id = element.id.toLowerCase();
-           
-           // Pontuação por palavras-chave nas classes/IDs
-           for (const keyword of priceKeywords) {
-             if (className.includes(keyword) || id.includes(keyword)) {
-               score += 10;
-             }
-           }
-           
-           // Pontuação por símbolos de moeda no texto
-           for (const symbol of currencySymbols) {
-             if (text.includes(symbol)) {
-               score += 15;
-             }
-           }
-           
-           // Pontuação por padrões numéricos
-           const numberPattern = /\d+[.,]\d{2}/;
-           if (numberPattern.test(text)) {
-             score += 8;
-           }
-           
-           // Penalização por texto muito longo (provavelmente não é preço)
-           if (text.length > 50) {
-             score -= 5;
-           }
-           
-           // Pontuação por tags típicas de preço
-           const tagName = element.tagName.toLowerCase();
-           if (['span', 'div', 'strong', 'b'].includes(tagName)) {
-             score += 3;
-           }
-           
-           if (score > 10 && text.trim().length > 0) {
-             candidates.push({ element, score, text: text.trim() });
-           }
-         }
-         
-         // Ordena por pontuação
-         candidates.sort((a, b) => b.score - a.score);
-         
-         return candidates.slice(0, 10).map(c => ({
-           text: c.text,
-           score: c.score,
-           tagName: c.element.tagName,
-           className: c.element.className,
-           id: c.element.id
-         }));
-       });
-       
-       console.log(`🧠 Análise semântica encontrou ${result.length} candidatos`);
-       
-       for (const candidate of result) {
-         const price = this.extractPrice(candidate.text);
-         if (price !== null && price > 0 && price < 1000000) {
-           const selector = this.buildSelectorFromCandidate(candidate);
-           console.log(`✅ Preço encontrado por análise semântica: ${candidate.text} (score: ${candidate.score}) - R$ ${price}`);
-           this.logSelectorAttempt(domain, selector, true, price);
-           return {
-             success: true,
-             price,
-             selector,
-             strategy: 'semantic-analysis'
-           };
-         }
-       }
-       
-       return { success: false, error: 'Análise semântica não encontrou preços válidos' };
-     } catch (error) {
-       return { success: false, error: `Erro na análise semântica: ${error}` };
-     }
-   }
+
+
+
+
+
+
+
    
    // Método auxiliar para construir seletor a partir do candidato
-   private buildSelectorFromCandidate(candidate: any): string {
+  private buildSelectorFromCandidate(candidate: { id?: string; className?: string; tagName?: string; attributes?: Record<string, string> }): string {
      if (candidate.id) {
        return `#${candidate.id}`;
      }
@@ -1350,68 +976,13 @@ export class PriceScraper {
      if (candidate.className) {
        const classes = candidate.className.split(' ').filter((c: string) => c.length > 0);
        if (classes.length > 0) {
-         return `${candidate.tagName.toLowerCase()}.${classes[0]}`;
+         return `${candidate.tagName?.toLowerCase()}.${classes[0]}`;
        }
      }
      
-     return candidate.tagName.toLowerCase();
+     return candidate.tagName?.toLowerCase() || 'unknown';
    }
-   
-   // ESTRATÉGIA 8: Busca por texto contendo "R$"
-   private async searchByPriceText(page: puppeteer.Page): Promise<ScrapingResult> {
-     try {
-       const result = await page.evaluate(() => {
-         // Busca todos os elementos que contenham R$
-         const xpath = "//*[contains(text(), 'R$')]";
-        const elements = document.evaluate(
-          xpath,
-          document,
-          null,
-          XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
-          null
-        );
-        
-        const candidates = [];
-        for (let i = 0; i < elements.snapshotLength; i++) {
-          const element = elements.snapshotItem(i) as Element;
-          if (element) {
-            const text = element.textContent?.trim() || '';
-            const rect = element.getBoundingClientRect();
-            
-            // Filtra elementos visíveis e com texto relevante
-            if (rect.width > 0 && rect.height > 0 && text.length < 100) {
-              candidates.push({
-                text: text,
-                tagName: element.tagName,
-                className: element.className,
-                visible: true
-              });
-            }
-          }
-        }
-        
-        return candidates;
-      });
-      
-      // Testa cada candidato
-      for (const candidate of result) {
-        const price = this.extractPrice(candidate.text);
-        if (price !== null && price > 0 && price < 1000000) {
-          console.log(`✅ Preço encontrado por busca de texto R$: ${candidate.text} - R$ ${price}`);
-          return {
-            success: true,
-            price,
-            selector: `Texto R$: "${candidate.text}"`,
-            strategy: 'text-search'
-          };
-        }
-      }
-      
-      return { success: false, error: 'Nenhum texto com R$ válido encontrado' };
-    } catch (error) {
-       return { success: false, error: `Erro na busca por texto: ${error}` };
-     }
-   }
+
 
   // Método para detecção automática de preços com múltiplas estratégias
   async scrapePriceAuto(url: string, retryCount = 0): Promise<ScrapingResult> {
@@ -1518,7 +1089,7 @@ export class PriceScraper {
           try {
             const element = await page.$(cachedSelector);
             if (element) {
-              const priceText = await page.evaluate(el => el.textContent || '', element);
+              const priceText = await page.evaluate((el: Element) => el.textContent || '', element);
               const price = this.extractPrice(priceText);
               
               if (price !== null && price > 0) {
@@ -1586,7 +1157,7 @@ export class PriceScraper {
           try {
             const element = await page.$(selector);
             if (element) {
-              const priceText = await page.evaluate(el => el.textContent || '', element);
+              const priceText = await page.evaluate((el: Element) => el.textContent || '', element);
               const price = this.extractPrice(priceText);
               
               if (price !== null && price > 0) {
@@ -1695,7 +1266,7 @@ export class PriceScraper {
         // Wait for the price element to be available
         await page.waitForSelector(selector, { timeout: 5000 });
         
-        const priceText = await page.$eval(selector, (element) => {
+        const priceText = await page.$eval(selector, (element: Element) => {
           return element.textContent || '';
         });
         
@@ -1871,7 +1442,7 @@ export class PriceScraper {
     return null;
   }
 
-  async scrapeSearchResults(site: string, query: string): Promise<any[]> {
+  async scrapeSearchResults(site: string, query: string): Promise<SearchResultItem[]> {
     console.log(`🔍 Iniciando busca por: "${query}" em ${site}`);
     
     // Usar dados simulados por padrão devido a problemas de timeout e anti-bot
@@ -1899,7 +1470,7 @@ export class PriceScraper {
     */
   }
 
-  private async attemptRealScraping(site: string, query: string): Promise<any[]> {
+  private async attemptRealScraping(site: string, query: string): Promise<SearchResultItem[]> {
     try {
       console.log(`🚀 Tentando scraping real para ${site}...`);
       
@@ -1943,7 +1514,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Amazon
-  private async scrapeAmazonOptimized(query: string): Promise<any[]> {
+  private async scrapeAmazonOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: [
@@ -1969,7 +1540,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-component-type="s-search-result"]');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return; // Limitar a 10 produtos
@@ -1991,7 +1562,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link ? `https://www.amazon.com.br${link}` : '',
-                image: image || ''
+                image: image || '',
+                store: 'Amazon'
               });
             }
           }
@@ -2011,7 +1583,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Mercado Livre
-  private async scrapeMercadoLivreOptimized(query: string): Promise<any[]> {
+  private async scrapeMercadoLivreOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2028,7 +1600,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('.ui-search-results__element');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2050,7 +1622,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link || '',
-                image: image || ''
+                image: image || '',
+                store: 'Mercado Livre'
               });
             }
           }
@@ -2070,7 +1643,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Americanas
-  private async scrapeAmericanasOptimized(query: string): Promise<any[]> {
+  private async scrapeAmericanasOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2087,7 +1660,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-testid="product-card"], .product-card');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2109,7 +1682,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link?.startsWith('http') ? link : `https://www.americanas.com.br${link}`,
-                image: image || ''
+                image: image || '',
+                store: 'Americanas'
               });
             }
           }
@@ -2129,7 +1703,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Carrefour
-  private async scrapeCarrefourOptimized(query: string): Promise<any[]> {
+  private async scrapeCarrefourOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2146,7 +1720,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-testid="product-card"], .product-card');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2168,7 +1742,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link?.startsWith('http') ? link : `https://www.carrefour.com.br${link}`,
-                image: image || ''
+                image: image || '',
+                store: 'Carrefour'
               });
             }
           }
@@ -2188,7 +1763,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Casas Bahia
-  private async scrapeCasasBahiaOptimized(query: string): Promise<any[]> {
+  private async scrapeCasasBahiaOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2205,7 +1780,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-testid="product-card"]');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2227,7 +1802,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link?.startsWith('http') ? link : `https://www.casasbahia.com.br${link}`,
-                image: image || ''
+                image: image || '',
+                store: 'Casas Bahia'
               });
             }
           }
@@ -2247,7 +1823,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Extra
-  private async scrapeExtraOptimized(query: string): Promise<any[]> {
+  private async scrapeExtraOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2264,7 +1840,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-testid="product-card"], .product-card');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2286,7 +1862,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link?.startsWith('http') ? link : `https://www.extra.com.br${link}`,
-                image: image || ''
+                image: image || '',
+                store: 'Extra'
               });
             }
           }
@@ -2306,7 +1883,7 @@ export class PriceScraper {
   }
 
   // Função otimizada para Ponto Frio
-  private async scrapePontoFrioOptimized(query: string): Promise<any[]> {
+  private async scrapePontoFrioOptimized(query: string): Promise<SearchResultItem[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
@@ -2323,7 +1900,7 @@ export class PriceScraper {
       
       const products = await page.evaluate(() => {
         const items = document.querySelectorAll('[data-testid="product-card"], .product-card');
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         
         items.forEach((item, index) => {
           if (index >= 10) return;
@@ -2345,7 +1922,8 @@ export class PriceScraper {
                 title,
                 price,
                 url: link?.startsWith('http') ? link : `https://www.pontofrio.com.br${link}`,
-                image: image || ''
+                image: image || '',
+                store: 'Ponto Frio'
               });
             }
           }
@@ -2364,8 +1942,8 @@ export class PriceScraper {
     }
   }
 
-  private generateOptimizedResults(site: string, query: string): any[] {
-    const results: any[] = [];
+  private generateOptimizedResults(site: string, query: string): SearchResultItem[] {
+    const results: SearchResultItem[] = [];
     const numProducts = 12;
     
     // Multiplicadores específicos por site
@@ -2446,7 +2024,7 @@ export class PriceScraper {
         price: finalPrice,
         url: url,
         image: `https://via.placeholder.com/200x200/${color}/FFFFFF?text=${encodeURIComponent(query.substring(0, 8))}`,
-        site: site,
+        store: site,
         relevanceScore: relevanceScore,
         combinedScore: combinedScore
       });
@@ -2456,7 +2034,7 @@ export class PriceScraper {
     return results.sort((a, b) => (b.combinedScore || 0) - (a.combinedScore || 0));
   }
 
-  private async scrapeAmazon(query: string): Promise<any[]> {
+  private async scrapeSubmarino(query: string): Promise<SearchResultItem[]> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2489,7 +2067,7 @@ export class PriceScraper {
       
       // Extrair dados dos produtos
       const products = await page.evaluate(() => {
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         const productElements = document.querySelectorAll('[data-component-type="s-search-result"]');
         
         productElements.forEach((element, index) => {
@@ -2523,7 +2101,7 @@ export class PriceScraper {
                 price,
                 url,
                 image,
-                site: 'Amazon'
+                store: 'Amazon'
               });
             }
           } catch (error) {
@@ -2545,7 +2123,7 @@ export class PriceScraper {
     }
   }
 
-  private async scrapeMercadoLivre(query: string): Promise<any[]> {
+  private async scrapeMercadoLivre(query: string): Promise<SearchResultItem[]> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2578,7 +2156,7 @@ export class PriceScraper {
       
       // Extrair dados dos produtos
       const products = await page.evaluate(() => {
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         const productElements = document.querySelectorAll('.ui-search-result');
         
         productElements.forEach((element, index) => {
@@ -2611,7 +2189,7 @@ export class PriceScraper {
                 price,
                 url,
                 image,
-                site: 'Mercado Livre'
+                store: 'Mercado Livre'
               });
             }
           } catch (error) {
@@ -2633,7 +2211,7 @@ export class PriceScraper {
     }
   }
 
-  private async scrapeAmericanas(query: string): Promise<any[]> {
+  private async scrapeAmericanas(query: string): Promise<SearchResultItem[]> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2652,7 +2230,7 @@ export class PriceScraper {
       await page.waitForSelector('[data-testid="product-card"], .product-card', { timeout: 10000 });
       
       const products = await page.evaluate(() => {
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         const productElements = document.querySelectorAll('[data-testid="product-card"], .product-card');
         
         productElements.forEach((element, index) => {
@@ -2677,7 +2255,7 @@ export class PriceScraper {
             const image = imageElement?.getAttribute('src') || imageElement?.getAttribute('data-src') || '';
             
             if (title && price > 0 && url) {
-              results.push({ title, price, url, image, site: 'Americanas' });
+              results.push({ title, price, url, image, store: 'Americanas' });
             }
           } catch (error) {
             console.error('Erro ao processar produto Americanas:', error);
@@ -2697,7 +2275,7 @@ export class PriceScraper {
     }
   }
 
-  private async scrapeCarrefour(query: string): Promise<any[]> {
+  private async scrapeCarrefour(query: string): Promise<SearchResultItem[]> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2716,7 +2294,7 @@ export class PriceScraper {
       await page.waitForSelector('.product-card, [data-testid="product-card"]', { timeout: 10000 });
       
       const products = await page.evaluate(() => {
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         const productElements = document.querySelectorAll('.product-card, [data-testid="product-card"]');
         
         productElements.forEach((element, index) => {
@@ -2741,7 +2319,7 @@ export class PriceScraper {
             const image = imageElement?.getAttribute('src') || imageElement?.getAttribute('data-src') || '';
             
             if (title && price > 0 && url) {
-              results.push({ title, price, url, image, site: 'Carrefour' });
+              results.push({ title, price, url, image, store: 'Carrefour' });
             }
           } catch (error) {
             console.error('Erro ao processar produto Carrefour:', error);
@@ -2761,7 +2339,7 @@ export class PriceScraper {
     }
   }
 
-  private async scrapeCasasBahia(query: string): Promise<any[]> {
+  private async scrapeCasasBahia(query: string): Promise<SearchResultItem[]> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2780,7 +2358,7 @@ export class PriceScraper {
       await page.waitForSelector('[data-testid="product-card"], .product-card', { timeout: 10000 });
       
       const products = await page.evaluate(() => {
-        const results: any[] = [];
+        const results: SearchResultItem[] = [];
         const productElements = document.querySelectorAll('[data-testid="product-card"], .product-card');
         
         productElements.forEach((element, index) => {
@@ -2805,7 +2383,7 @@ export class PriceScraper {
             const image = imageElement?.getAttribute('src') || imageElement?.getAttribute('data-src') || '';
             
             if (title && price > 0 && url) {
-              results.push({ title, price, url, image, site: 'Casas Bahia' });
+              results.push({ title, price, url, image, store: 'Casas Bahia' });
             }
           } catch (error) {
             console.error('Erro ao processar produto Casas Bahia:', error);
@@ -2825,9 +2403,9 @@ export class PriceScraper {
     }
   }
 
-  private generateMockResults(site: string, query: string): any[] {
+  private generateMockResults(site: string, query: string): SearchResultItem[] {
     const basePrice = Math.floor(Math.random() * 1000) + 200;
-    const results: any[] = [];
+    const results: SearchResultItem[] = [];
     
     // Gerar 3-5 produtos simulados por site
     const numResults = Math.floor(Math.random() * 3) + 3;
@@ -2864,14 +2442,14 @@ export class PriceScraper {
         price: parseFloat(price.toFixed(2)),
         url: productUrl,
         image: `https://via.placeholder.com/200x200?text=${site}+${i + 1}`,
-        site: site
+        store: site
       });
     }
     
     return results;
   }
 
-  async scrapeProductPage(url: string, siteName: string): Promise<{ success: boolean; title?: string; price?: number; image?: string; error?: string }> {
+  async scrapeProductPage(url: string): Promise<{ success: boolean; title?: string; price?: number; image?: string; error?: string }> {
     try {
       if (!this.browser) {
         this.browser = await puppeteer.launch({
@@ -2897,7 +2475,7 @@ export class PriceScraper {
       // Aguardar um pouco para a página carregar completamente
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const result = await page.evaluate((selectors) => {
+      const result = await page.evaluate((selectors: string[]) => {
         // Função para extrair preço de texto
         const extractPrice = (text: string): number => {
           if (!text) return 0;
@@ -3014,5 +2592,4 @@ export class PriceScraper {
   }
 }
 
-// Exporta a classe
-export { PriceScraper };
+// Classe já exportada na declaração

@@ -24,7 +24,8 @@ export default function ProductForm({ onAddProduct }: ProductFormProps) {
         name: formData.name,
         url: formData.url,
         initialPrice: parseFloat(formData.initialPrice),
-        selector: 'auto' // Indica detecção automática
+        selector: 'auto', // Indica detecção automática
+        addedAt: new Date().toISOString()
       };
 
       onAddProduct(product);

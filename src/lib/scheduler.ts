@@ -8,7 +8,7 @@ export class PriceMonitorScheduler {
   private scraper: PriceScraper;
   private telegramNotifier: TelegramNotifier;
   private isRunning: boolean = false;
-  private cronJob: cron.ScheduledTask | null = null;
+  private cronJob: any | null = null;
 
   constructor() {
     this.scraper = new PriceScraper();
@@ -30,7 +30,7 @@ export class PriceMonitorScheduler {
     this.cronJob = cron.schedule(cronExpression, async () => {
       await this.runMonitoringCycle();
     }, {
-      scheduled: false
+      // scheduled: false // Removido - não é uma propriedade válida
     });
 
     this.cronJob.start();
@@ -74,7 +74,7 @@ export class PriceMonitorScheduler {
         return;
       }
 
-      await this.scraper.initialize();
+      // Scraper não precisa de inicialização explícita
       
       const results = await Promise.allSettled(
         products.map(product => this.checkProductPrice(product, notificationSettings))
@@ -117,29 +117,29 @@ export class PriceMonitorScheduler {
       const updatedProduct: Product = {
         ...product,
         currentPrice: newPrice,
-        lastChecked: new Date(),
+        lastChecked: new Date().toISOString(),
         priceHistory: [
-          ...product.priceHistory,
+          ...(product.priceHistory || []),
           {
-            price: newPrice,
-            timestamp: new Date()
-          }
+              price: newPrice || 0,
+              date: new Date().toISOString()
+            }
         ].slice(-50) // Mantém apenas os últimos 50 registros
       };
       
       LocalStorage.updateProduct(updatedProduct.id, updatedProduct);
       
       // Verifica se houve queda de preço abaixo do valor inicial
-      const priceDropped = newPrice < product.initialPrice;
+      const priceDropped = newPrice !== null && newPrice !== undefined && newPrice < product.initialPrice;
       
       if (priceDropped) {
         await this.sendPriceAlert(updatedProduct, previousPrice);
       }
       
-      console.log(`${product.name}: R$ ${newPrice.toFixed(2)} (referência: R$ ${product.initialPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
+      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (referência: R$ ${product.initialPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
       
       if (priceDropped) {
-        console.log(`🎯 ALERTA: Preço de ${product.name} baixou para R$ ${newPrice.toFixed(2)}!`);
+        console.log(`🎯 ALERTA: Preço de ${product.name} baixou para R$ ${newPrice?.toFixed(2) || 'N/A'}!`);
       }
       
     } catch (error) {
@@ -158,22 +158,16 @@ export class PriceMonitorScheduler {
         return;
       }
       
-      await this.telegramNotifier.initialize(
-        notificationSettings.botToken,
-        notificationSettings.chatId
+      this.telegramNotifier.init({
+        botToken: notificationSettings.telegram.botToken,
+        chatId: notificationSettings.telegram.chatId
+      });
+      
+      await this.telegramNotifier.sendPriceAlert(
+        product,
+        product.initialPrice,
+        product.currentPrice!
       );
-      
-      let message = `🚨 *Alerta de Preço!*\n\n`;
-      message += `📦 *Produto:* ${product.name}\n`;
-      message += `💰 *Preço Atual:* R$ ${product.currentPrice!.toFixed(2)}\n`;
-      message += `📊 *Preço de Referência:* R$ ${product.initialPrice.toFixed(2)}\n`;
-      
-      const discount = ((product.initialPrice - product.currentPrice!) / product.initialPrice * 100);
-      message += `📉 *Desconto:* ${discount.toFixed(1)}%\n`;
-      
-      message += `\n🔗 [Ver Produto](${product.url})`;
-      
-      await this.telegramNotifier.sendPriceAlert(message);
       
       console.log(`Alerta enviado para ${product.name}`);
       

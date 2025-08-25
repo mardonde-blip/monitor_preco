@@ -5,7 +5,7 @@ import ProductSearch from '../components/ProductSearch';
 import ProductList from '../components/ProductList';
 import TelegramSettings from '../components/TelegramSettings';
 import SchedulerControl from '../components/SchedulerControl';
-import { Product, TelegramSettings as TelegramSettingsType } from '../types';
+import { Product, NotificationSettings } from '../types';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,10 +15,12 @@ export default function Home() {
   const [currentPrice, setCurrentPrice] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
-  const [settings, setSettings] = useState<TelegramSettingsType>({
-    botToken: '',
-    chatId: '',
-    enabled: false
+  const [settings, setSettings] = useState<NotificationSettings>({
+    enabled: false,
+    telegram: {
+      botToken: '',
+      chatId: ''
+    }
   });
 
   // Carregar produtos salvos
@@ -273,7 +275,7 @@ export default function Home() {
     }
   };
 
-  const handleUpdateSettings = (newSettings: TelegramSettingsType) => {
+  const handleUpdateSettings = (newSettings: NotificationSettings) => {
     setSettings(newSettings);
     localStorage.setItem('telegramSettings', JSON.stringify(newSettings));
   };

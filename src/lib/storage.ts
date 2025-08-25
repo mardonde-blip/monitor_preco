@@ -13,13 +13,13 @@ export class LocalStorage {
       
       const products = JSON.parse(stored);
       // Convert date strings back to Date objects
-      return products.map((product: any) => ({
+      return products.map((product: Record<string, unknown>) => ({
         ...product,
-        createdAt: new Date(product.createdAt),
-        lastChecked: product.lastChecked ? new Date(product.lastChecked) : undefined,
-        priceHistory: product.priceHistory.map((history: any) => ({
+        createdAt: new Date(product.createdAt as string),
+        lastChecked: product.lastChecked ? new Date(product.lastChecked as string) : undefined,
+        priceHistory: (product.priceHistory as Record<string, unknown>[]).map((history: Record<string, unknown>) => ({
           ...history,
-          timestamp: new Date(history.timestamp)
+          timestamp: new Date(history.timestamp as string)
         }))
       }));
     } catch (error) {

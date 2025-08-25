@@ -1,8 +1,6 @@
 // Script para testar scraping e envio para Telegram
 // Execute com: npx tsx test-telegram.ts
 
-import fetch from 'node-fetch';
-
 // Configurações do produto
 const productUrl = 'https://www.carrefour.com.br/whisky-buchanans-deluxe-12-anos-1l-6-unidades-b2-6-164666/p';
 const productName = 'Whisky Buchanan\'s Deluxe 12 Anos 1L';

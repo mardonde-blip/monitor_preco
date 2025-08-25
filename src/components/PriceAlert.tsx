@@ -222,7 +222,7 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   placeholder="seu@email.com"
-                  required={notificationMethod !== 'sms'}
+                  required={['email', 'both'].includes(notificationMethod)}
                 />
               </div>
             )}
@@ -239,7 +239,7 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   placeholder="(11) 99999-9999"
-                  required={notificationMethod !== 'email'}
+                  required={['sms', 'both'].includes(notificationMethod)}
                 />
               </div>
             )}

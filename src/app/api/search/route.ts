@@ -169,19 +169,23 @@ export async function POST(request: NextRequest) {
         );
         
         siteResults[siteName] = {
-          cheapestProduct,
           totalFound: validProducts.length,
           allProducts: validProducts.sort((a, b) => a.price - b.price)
-        };
+        } as any;
+        
+        // Adicionar propriedades extras
+        (siteResults[siteName] as any).cheapestProduct = cheapestProduct;
         
         // Adicionar todos os produtos válidos para a lista geral
         allValidResults.push(...validProducts);
       } else {
         siteResults[siteName] = {
-          cheapestProduct: null,
           totalFound: 0,
           allProducts: []
-        };
+        } as any;
+        
+        // Adicionar propriedades extras
+        (siteResults[siteName] as any).cheapestProduct = null;
       }
     });
     
@@ -190,12 +194,12 @@ export async function POST(request: NextRequest) {
     
     // Criar resumo dos menores preços por site
     const siteSummary = Object.entries(siteResults)
-      .filter(([, data]) => data.cheapestProduct)
+      .filter(([, data]) => (data as any).cheapestProduct)
       .map(([siteName, data]) => ({
         site: siteName,
-        cheapestPrice: data.cheapestProduct.price,
-        cheapestProduct: data.cheapestProduct,
-        totalProducts: data.totalFound
+        cheapestPrice: (data as any).cheapestProduct.price,
+        cheapestProduct: (data as any).cheapestProduct,
+        totalProducts: (data as any).totalFound
       }))
       .sort((a, b) => a.cheapestPrice - b.cheapestPrice);
     

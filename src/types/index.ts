@@ -32,6 +32,7 @@ export interface ScrapingResult {
   price?: number;
   error?: string;
   selector?: string; // Seletor que funcionou na detecção automática
+  strategy?: string; // Estratégia utilizada na detecção
 }
 
 export interface MonitoringJob {

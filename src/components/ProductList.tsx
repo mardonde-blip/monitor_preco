@@ -170,7 +170,7 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
                 
                 <div>
                   <span className="text-gray-500">Adicionado:</span>
-                  <p className="font-medium">{formatDate(product.createdAt)}</p>
+                  <p className="font-medium">{formatDate(product.addedAt)}</p>
                 </div>
               </div>
               

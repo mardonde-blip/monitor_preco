@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const scraper = createPriceScraper();
     
     // Fazer o scraping da página do produto
-    const result = await scraper.scrapeProductPage(url, siteName);
+    const result = await scraper.scrapeProductPage(url);
     
     if (!result.success) {
       return NextResponse.json({ 
