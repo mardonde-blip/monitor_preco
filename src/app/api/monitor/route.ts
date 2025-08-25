@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Create a new scraper instance
     const scraper = createPriceScraper();
-    const results: Array<{
+    interface MonitorResult {
       productId: string;
       success: boolean;
       oldPrice?: number;
@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
       priceDropped?: boolean;
       detectedSelector?: string;
       error?: string;
-    }> = [];
+    }
+    
+    const results: MonitorResult[] = [];
 
     for (const product of products) {
       try {
