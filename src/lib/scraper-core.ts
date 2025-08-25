@@ -1,4 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteerCore from 'puppeteer-core';
 import { ScrapingResult } from '@/types';
 import chromium from '@sparticuz/chromium';
 
@@ -762,6 +763,8 @@ export class PriceScraper {
             timeout: 60000
           };
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
+          // Usar puppeteer-core em produção
+          this.browser = await puppeteerCore.launch(launchOptions);
         } else {
           // Configuração para desenvolvimento local
           launchOptions = {
@@ -798,9 +801,9 @@ export class PriceScraper {
             ignoreHTTPSErrors: true
           };
           console.log('🛠️ Configurando Puppeteer para ambiente de desenvolvimento');
+          // Usar puppeteer normal em desenvolvimento
+          this.browser = await puppeteer.launch(launchOptions);
         }
-
-        this.browser = await puppeteer.launch(launchOptions);
         console.log('✅ Puppeteer inicializado com sucesso');
       } catch (error) {
         console.error('❌ Erro ao inicializar Puppeteer:', error);
