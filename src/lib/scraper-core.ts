@@ -740,7 +740,8 @@ export class PriceScraper {
   async init() {
     if (!this.browser) {
       try {
-        this.browser = await puppeteer.launch({
+        // Configuração robusta para diferentes ambientes
+        const launchOptions = {
           headless: true,
           args: [
             '--no-sandbox',
@@ -751,13 +752,47 @@ export class PriceScraper {
             '--no-zygote',
             '--disable-gpu',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-features=VizDisplayCompositor',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-default-apps',
+            '--disable-hang-monitor',
+            '--disable-prompt-on-repost',
+            '--disable-sync',
+            '--disable-translate',
+            '--metrics-recording-only',
+            '--no-default-browser-check',
+            '--safebrowsing-disable-auto-update',
+            '--enable-automation',
+            '--password-store=basic',
+            '--use-mock-keychain'
           ],
-          timeout: 30000
-        });
+          timeout: 60000,
+          ignoreDefaultArgs: ['--disable-extensions'],
+          ignoreHTTPSErrors: true
+        };
+
+        this.browser = await puppeteer.launch(launchOptions);
+        console.log('✅ Puppeteer inicializado com sucesso');
       } catch (error) {
-        console.error('Erro ao inicializar Puppeteer:', error);
-        throw error;
+        console.error('❌ Erro ao inicializar Puppeteer:', error);
+        
+        // Tentar configuração alternativa mais simples
+        try {
+          console.log('🔄 Tentando configuração alternativa...');
+          this.browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            timeout: 30000
+          });
+          console.log('✅ Puppeteer inicializado com configuração alternativa');
+        } catch (fallbackError) {
+          console.error('❌ Erro na configuração alternativa:', fallbackError);
+          throw new Error(`Falha ao inicializar Puppeteer: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        }
       }
     }
   }
