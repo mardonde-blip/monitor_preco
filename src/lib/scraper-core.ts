@@ -749,20 +749,20 @@ export class PriceScraper {
         
         if (isProduction) {
           // Configuração para Vercel/produção usando @sparticuz/chromium
+          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
+          
+          const executablePath = await chromium.executablePath();
+          console.log('📍 Executable path:', executablePath);
+          
           launchOptions = {
-            args: [
-              ...chromium.args,
-              '--hide-scrollbars',
-              '--disable-web-security',
-              '--disable-features=VizDisplayCompositor',
-            ],
+            args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(),
+            executablePath: executablePath,
             headless: chromium.headless,
             ignoreHTTPSErrors: true,
             timeout: 60000
           };
-          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
+          
           // Usar puppeteer-core em produção
           this.browser = await puppeteerCore.launch(launchOptions);
         } else {
