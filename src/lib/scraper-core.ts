@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { ScrapingResult } from '@/types';
+import chromium from '@sparticuz/chromium';
 
 interface SearchResultItem {
   title: string;
@@ -740,40 +741,64 @@ export class PriceScraper {
   async init() {
     if (!this.browser) {
       try {
-        // Configuração robusta para diferentes ambientes
-        const launchOptions = {
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-extensions',
-            '--disable-plugins',
-            '--disable-default-apps',
-            '--disable-hang-monitor',
-            '--disable-prompt-on-repost',
-            '--disable-sync',
-            '--disable-translate',
-            '--metrics-recording-only',
-            '--no-default-browser-check',
-            '--safebrowsing-disable-auto-update',
-            '--enable-automation',
-            '--password-store=basic',
-            '--use-mock-keychain'
-          ],
-          timeout: 60000,
-          ignoreDefaultArgs: ['--disable-extensions'],
-          ignoreHTTPSErrors: true
-        };
+        // Detectar ambiente (desenvolvimento vs produção/Vercel)
+        const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+        
+        let launchOptions: any;
+        
+        if (isProduction) {
+          // Configuração para Vercel/produção usando @sparticuz/chromium
+          launchOptions = {
+            args: [
+              ...chromium.args,
+              '--hide-scrollbars',
+              '--disable-web-security',
+              '--disable-features=VizDisplayCompositor',
+            ],
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
+            timeout: 60000
+          };
+          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
+        } else {
+          // Configuração para desenvolvimento local
+          launchOptions = {
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu',
+              '--disable-web-security',
+              '--disable-features=VizDisplayCompositor',
+              '--disable-background-timer-throttling',
+              '--disable-backgrounding-occluded-windows',
+              '--disable-renderer-backgrounding',
+              '--disable-extensions',
+              '--disable-plugins',
+              '--disable-default-apps',
+              '--disable-hang-monitor',
+              '--disable-prompt-on-repost',
+              '--disable-sync',
+              '--disable-translate',
+              '--metrics-recording-only',
+              '--no-default-browser-check',
+              '--safebrowsing-disable-auto-update',
+              '--enable-automation',
+              '--password-store=basic',
+              '--use-mock-keychain'
+            ],
+            timeout: 60000,
+            ignoreDefaultArgs: ['--disable-extensions'],
+            ignoreHTTPSErrors: true
+          };
+          console.log('🛠️ Configurando Puppeteer para ambiente de desenvolvimento');
+        }
 
         this.browser = await puppeteer.launch(launchOptions);
         console.log('✅ Puppeteer inicializado com sucesso');
