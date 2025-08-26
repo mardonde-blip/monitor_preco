@@ -272,11 +272,13 @@ export default function Home() {
           }
         }
       } else {
-        console.error('Erro na resposta da API:', response.status);
+        const statusCode = response.status;
+        console.error('Erro na resposta da API:', statusCode);
         alert('❌ Não foi possível verificar o preço.\n\nMotivo: Erro na comunicação com o servidor. Tente novamente.');
       }
     } catch (error) {
-      console.error('Erro ao verificar preco:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('Erro ao verificar preco:', errorMessage);
       alert('❌ Não foi possível verificar o preço.\n\nMotivo: Erro de conexão. Verifique sua internet e tente novamente.');
     }
   };
