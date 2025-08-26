@@ -742,23 +742,21 @@ export class PriceScraper {
   async init() {
     if (!this.browser) {
       try {
-        // Detectar ambiente AWS Lambda/Vercel
-        const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_VERSION || !!process.env.VERCEL;
-        const isProduction = process.env.NODE_ENV === 'production';
+        let browser: any;
         
-        let launchOptions: any;
-        
-        if (isLambda || isProduction) {
-          // Configuração para AWS Lambda/Vercel usando @sparticuz/chromium
-          console.log('🚀 Configurando Puppeteer para ambiente serverless (AWS Lambda/Vercel)');
+        if (process.env.NODE_ENV !== 'development') {
+          // Configuração para produção/Vercel usando @sparticuz/chromium
+          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
           console.log('📦 Usando @sparticuz/chromium para compatibilidade serverless');
           
-          // Configuração otimizada para Vercel com @sparticuz/chromium
-          launchOptions = {
+          // Desabilitar modo gráfico para melhor performance
+          chromium.setGraphicsMode = false;
+          
+          const launchOptions = {
             args: [
               ...chromium.args,
-              '--hide-scrollbars',
-              '--disable-web-security'
+              '--no-sandbox',
+              '--disable-setuid-sandbox'
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
@@ -766,47 +764,29 @@ export class PriceScraper {
             ignoreHTTPSErrors: true
           };
           
-          console.log('📍 Ambiente detectado: AWS Lambda/Vercel');
+          console.log('📍 Ambiente: Produção/Vercel');
           console.log('📍 Executable path:', await chromium.executablePath());
-          this.browser = await puppeteerCore.launch(launchOptions)
+          browser = await puppeteerCore.launch(launchOptions);
+          this.browser = browser;
         } else {
           // Configuração para desenvolvimento local
-          launchOptions = {
+          console.log('🚀 Configurando Puppeteer para ambiente de desenvolvimento');
+          console.log('📦 Usando Puppeteer padrão para desenvolvimento local');
+          
+          const launchOptions = {
             headless: true,
             args: [
               '--no-sandbox',
               '--disable-setuid-sandbox',
               '--disable-dev-shm-usage',
-              '--disable-accelerated-2d-canvas',
-              '--no-first-run',
-              '--no-zygote',
-              '--disable-gpu',
-              '--disable-web-security',
-              '--disable-features=VizDisplayCompositor',
-              '--disable-background-timer-throttling',
-              '--disable-backgrounding-occluded-windows',
-              '--disable-renderer-backgrounding',
-              '--disable-extensions',
-              '--disable-plugins',
-              '--disable-default-apps',
-              '--disable-hang-monitor',
-              '--disable-prompt-on-repost',
-              '--disable-sync',
-              '--disable-translate',
-              '--metrics-recording-only',
-              '--no-default-browser-check',
-              '--safebrowsing-disable-auto-update',
-              '--enable-automation',
-              '--password-store=basic',
-              '--use-mock-keychain'
+              '--disable-gpu'
             ],
-            timeout: 60000,
-            ignoreDefaultArgs: ['--disable-extensions'],
             ignoreHTTPSErrors: true
           };
-          console.log('🛠️ Configurando Puppeteer para ambiente de desenvolvimento');
-          // Usar puppeteer normal em desenvolvimento
-          this.browser = await puppeteer.launch(launchOptions);
+          
+          console.log('📍 Ambiente: Desenvolvimento local');
+          browser = await puppeteerCore.launch(launchOptions);
+          this.browser = browser;
         }
         console.log('✅ Puppeteer inicializado com sucesso');
       } catch (error) {
