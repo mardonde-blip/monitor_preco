@@ -753,7 +753,7 @@ export class PriceScraper {
           console.log('📦 Usando @sparticuz/chromium-min para serverless');
           
           // URL do Chromium tar hospedado externamente
-          const chromiumUrl = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar';
+          const chromiumUrl = 'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar';
           
           launchOptions = {
             args: [
