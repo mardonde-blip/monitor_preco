@@ -2,6 +2,7 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
 import { ScrapingResult } from '@/types';
 import chromium from '@sparticuz/chromium';
+import { install, canDownload } from '@puppeteer/browsers';
 
 interface SearchResultItem {
   title: string;
@@ -748,23 +749,50 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isProduction) {
-          // Configuração para Vercel/produção usando @sparticuz/chromium
+          // Configuração para Vercel/produção usando @puppeteer/browsers
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
           
-          const executablePath = await chromium.executablePath();
-          console.log('📍 Executable path:', executablePath);
-          
-          launchOptions = {
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: executablePath,
-            headless: chromium.headless,
-            ignoreHTTPSErrors: true,
-            timeout: 60000
-          };
-          
-          // Usar puppeteer-core em produção
-          this.browser = await puppeteerCore.launch(launchOptions);
+          try {
+            // Tentar usar @sparticuz/chromium primeiro
+            const executablePath = await chromium.executablePath();
+            console.log('📍 Usando @sparticuz/chromium, executable path:', executablePath);
+            
+            launchOptions = {
+              args: chromium.args,
+              defaultViewport: chromium.defaultViewport,
+              executablePath: executablePath,
+              headless: chromium.headless,
+              ignoreHTTPSErrors: true,
+              timeout: 60000
+            };
+            
+            this.browser = await puppeteerCore.launch(launchOptions);
+          } catch (chromiumError) {
+            console.log('⚠️ Falha com @sparticuz/chromium, tentando @puppeteer/browsers...');
+            console.error('Erro chromium:', chromiumError);
+            
+            // Fallback para @puppeteer/browsers
+            const browserFetcher = puppeteer.createBrowserFetcher();
+            const revisionInfo = await browserFetcher.download('1095492'); // Chrome stable
+            
+            launchOptions = {
+              executablePath: revisionInfo.executablePath,
+              headless: true,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process'
+              ],
+              ignoreHTTPSErrors: true,
+              timeout: 60000
+            };
+            
+            this.browser = await puppeteerCore.launch(launchOptions);
+          }
         } else {
           // Configuração para desenvolvimento local
           launchOptions = {
