@@ -1,6 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -749,34 +749,21 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isLambda || isProduction) {
-          // Configuração para AWS Lambda/Vercel usando @sparticuz/chromium-min
+          // Configuração para AWS Lambda/Vercel usando @sparticuz/chromium
           console.log('🚀 Configurando Puppeteer para ambiente serverless (AWS Lambda/Vercel)');
-          console.log('📦 Usando @sparticuz/chromium-min para compatibilidade serverless');
+          console.log('📦 Usando @sparticuz/chromium para compatibilidade serverless');
           
-          // Usar chromium local sem URL externa para evitar problemas de download
+          // Configuração otimizada para Vercel com @sparticuz/chromium
           launchOptions = {
             args: [
               ...chromium.args,
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-accelerated-2d-canvas',
-              '--no-first-run',
-              '--no-zygote',
-              '--single-process',
-              '--disable-gpu',
               '--hide-scrollbars',
-              '--disable-web-security',
-              '--disable-features=VizDisplayCompositor',
-              '--disable-background-timer-throttling',
-              '--disable-backgrounding-occluded-windows',
-              '--disable-renderer-backgrounding'
+              '--disable-web-security'
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
             headless: chromium.headless,
-            ignoreHTTPSErrors: true,
-            timeout: 60000
+            ignoreHTTPSErrors: true
           };
           
           console.log('📍 Ambiente detectado: AWS Lambda/Vercel');
