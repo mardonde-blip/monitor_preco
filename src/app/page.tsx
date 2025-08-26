@@ -266,8 +266,9 @@ export default function Home() {
               alert(`${simbolo} Alteração no preço detectada!\n\nPreço anterior: R$ ${currentPrice.toFixed(2).replace('.', ',')}\nPreço atual: R$ ${newPrice.toFixed(2).replace('.', ',')}\n\nO preço ${texto} R$ ${Math.abs(diferenca).toFixed(2).replace('.', ',')}`);
             }
           } else {
-            console.error('Erro no scraping:', result.error);
-            alert('❌ Não foi possível verificar o preço.\n\nMotivo: ' + (result.error || 'Falha no scraping'));
+            const errorMessage = result.error || 'Falha no scraping';
+            console.error('Erro no scraping:', errorMessage);
+            alert('❌ Não foi possível verificar o preço.\n\nMotivo: ' + errorMessage);
           }
         }
       } else {
