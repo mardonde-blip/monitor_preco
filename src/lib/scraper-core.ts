@@ -880,79 +880,19 @@ export class PriceScraper {
   async init() {
     if (!this.browser) {
       try {
-        let browser: any;
+        console.log('🚀 Inicializando Puppeteer...');
         
-        // Detectar ambiente Vercel de forma mais robusta
-        const isVercel = process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === 'production';
+        // Usar as funções auxiliares otimizadas
+        const puppeteerInstance = getPuppeteerInstance();
+        const launchOptions = await getLaunchOptions();
         
-        if (isVercel) {
-          // Configuração para produção/Vercel usando @sparticuz/chromium
-          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
-          console.log('📦 Usando @sparticuz/chromium para compatibilidade serverless');
-          console.log('🌍 Variáveis de ambiente detectadas:', {
-            VERCEL: process.env.VERCEL,
-            VERCEL_ENV: process.env.VERCEL_ENV,
-            NODE_ENV: process.env.NODE_ENV
-          });
-          
-          // Desabilitar modo gráfico para melhor performance no Vercel
-          chromium.setGraphicsMode = false;
-          
-          // Configurar cache directory se não estiver definido
-          if (!process.env.PUPPETEER_CACHE_DIR) {
-            process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
-            console.log('📁 Cache directory configurado:', process.env.PUPPETEER_CACHE_DIR);
-          }
-          
-          // Usar URL específica do tar file para melhor compatibilidade
-          const executablePath = await chromium.executablePath(
-            'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.tar'
-          );
-          console.log('📍 Executable path:', executablePath);
-          
-          const launchOptions = {
-            args: [
-              ...chromium.args,
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu',
-              '--single-process',
-              '--hide-scrollbars',
-              '--disable-web-security'
-            ],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: executablePath,
-            headless: 'new',
-            ignoreHTTPSErrors: true,
-            timeout: 30000
-          };
-          
-          console.log('📍 Ambiente: Produção/Vercel');
-          console.log('📍 Args:', launchOptions.args);
-          browser = await puppeteerCore.launch(launchOptions);
-          this.browser = browser;
-        } else {
-          // Configuração para desenvolvimento local
-          console.log('🚀 Configurando Puppeteer para ambiente de desenvolvimento');
-          console.log('📦 Usando Puppeteer padrão para desenvolvimento local');
-          
-          const launchOptions = {
-            headless: true,
-            args: [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu'
-            ],
-            ignoreHTTPSErrors: true
-          };
-          
-          console.log('📍 Ambiente: Desenvolvimento local');
-          const puppeteerInstance = getPuppeteerInstance();
-          browser = await puppeteerInstance.launch(launchOptions);
-          this.browser = browser;
-        }
+        console.log('📍 Configuração de lançamento:', {
+          isProduction: process.env.VERCEL || process.env.NODE_ENV === 'production',
+          args: launchOptions.args?.slice(0, 5), // Mostrar apenas os primeiros 5 args
+          timeout: launchOptions.timeout
+        });
+        
+        this.browser = await puppeteerInstance.launch(launchOptions);
         console.log('✅ Puppeteer inicializado com sucesso');
       } catch (error) {
         console.error('❌ Erro ao inicializar Puppeteer:', error);
@@ -963,8 +903,8 @@ export class PriceScraper {
           const puppeteerInstance = getPuppeteerInstance();
           this.browser = await puppeteerInstance.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            timeout: 30000
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+            timeout: 60000
           });
           console.log('✅ Puppeteer inicializado com configuração alternativa');
         } catch (fallbackError) {
