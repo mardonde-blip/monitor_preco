@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
             success: true,
             title: 'Produto encontrado via Playwright',
             price: playwrightResult.price,
-            image: '',
-            selector: playwrightResult.selector
+            image: ''
           };
         } else {
           console.log('❌ Playwright também falhou');
@@ -76,8 +75,7 @@ export async function POST(request: NextRequest) {
             success: true,
             title: 'Produto encontrado via HTTP',
             price: httpResult.price,
-            image: '',
-            selector: httpResult.selector
+            image: ''
           };
         } else {
           console.log('❌ Todos os métodos falharam');

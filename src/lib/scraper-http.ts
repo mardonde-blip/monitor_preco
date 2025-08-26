@@ -179,15 +179,16 @@ export class HttpPriceScraper {
       try {
         const elements = $(selector);
         
-        elements.each((_, element) => {
-          const text = $(element).text().trim();
+        for (let i = 0; i < elements.length; i++) {
+          const element = elements.eq(i);
+          const text = element.text().trim();
           if (text) {
             const price = this.extractPrice(text);
             if (price > 0) {
               return { success: true, price, selector };
             }
           }
-        });
+        }
       } catch (error) {
         console.log(`⚠️ Erro com seletor ${selector}:`, error);
       }

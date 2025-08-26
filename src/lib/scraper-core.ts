@@ -37,9 +37,9 @@ const getLaunchOptions = async () => {
     
     return {
       args: chromeArgs,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: { width: 1920, height: 1080 },
       executablePath: executablePath,
-      headless: chromium.headless,
+      headless: true,
       ignoreHTTPSErrors: true,
       timeout: 60000 // Timeout maior para serverless
     };
@@ -890,7 +890,7 @@ export class PriceScraper {
           timeout: launchOptions.timeout
         });
         
-        this.browser = await puppeteerInstance.launch(launchOptions);
+        this.browser = await puppeteerInstance.launch(launchOptions) as Browser;
         console.log('✅ Puppeteer inicializado com sucesso');
       } catch (error) {
         console.error('❌ Erro ao inicializar Puppeteer:', error);
@@ -903,7 +903,7 @@ export class PriceScraper {
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
             timeout: 60000
-          });
+          }) as Browser;
           console.log('✅ Puppeteer inicializado com configuração alternativa');
         } catch (fallbackError) {
           console.error('❌ Erro na configuração alternativa:', fallbackError);

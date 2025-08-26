@@ -272,15 +272,17 @@ export class PlaywrightPriceScraper {
       const content = await page.content();
       const $ = cheerio.load(content);
       
-      $('*').each((_, element) => {
-        const text = $(element).text();
+      const allElements = $('*');
+      for (let i = 0; i < allElements.length; i++) {
+        const element = allElements.eq(i);
+        const text = element.text();
         if (text.includes('R$')) {
           const price = this.extractPrice(text);
           if (price > 0) {
             return { success: true, price, selector: 'cheerio-search' };
           }
         }
-      });
+      }
       
     } catch (error) {
       console.error('Erro na busca por texto:', error);
