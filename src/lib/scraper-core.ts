@@ -1,6 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -748,30 +747,32 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isProduction) {
-          // Configuração para Vercel/produção usando @sparticuz/chromium
+          // Configuração para Vercel/produção usando puppeteer com Chromium bundled
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
-          console.log('📦 Usando @sparticuz/chromium para compatibilidade com serverless');
+          console.log('📦 Usando puppeteer com Chromium bundled');
           
           launchOptions = {
+            headless: true,
             args: [
-              ...chromium.args,
-              '--hide-scrollbars',
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-gpu',
+              '--no-first-run',
+              '--no-zygote',
+              '--single-process',
               '--disable-web-security',
               '--disable-features=VizDisplayCompositor',
               '--disable-background-timer-throttling',
               '--disable-backgrounding-occluded-windows',
               '--disable-renderer-backgrounding'
             ],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(),
-            headless: chromium.headless,
             ignoreHTTPSErrors: true,
             timeout: 60000
           };
           
-          console.log('📍 Executable path:', await chromium.executablePath());
           console.log('📍 Configuração final:', JSON.stringify(launchOptions, null, 2));
-          this.browser = await puppeteerCore.launch(launchOptions)
+          this.browser = await puppeteer.launch(launchOptions)
         } else {
           // Configuração para desenvolvimento local
           launchOptions = {
