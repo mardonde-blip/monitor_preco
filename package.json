@@ -17,8 +17,8 @@
     "next": "15.5.0",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.66.0",
-    "puppeteer": "^24.17.0",
-    "puppeteer-core": "^24.17.0",
+    "puppeteer": "^24.15.0",
+    "puppeteer-core": "^24.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
