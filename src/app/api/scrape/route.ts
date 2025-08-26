@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPriceScraper } from '@/lib/scraper';
 import { getPlaywrightScraper } from '@/lib/scraper-playwright';
+import { getHttpScraper } from '@/lib/scraper-http';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,30 @@ export async function POST(request: NextRequest) {
         await playwrightScraper.close();
       } catch (playwrightError) {
         console.error('❌ Erro no Playwright:', playwrightError);
+      }
+    }
+    
+    // Se tanto Puppeteer quanto Playwright falharem, tentar HTTP simples
+    if (!result.success) {
+      console.log('🌐 Tentando fallback HTTP simples...');
+      try {
+        const httpScraper = getHttpScraper();
+        const httpResult = await httpScraper.scrapePriceHttp(url);
+        
+        if (httpResult.success) {
+          console.log('✅ HTTP scraper conseguiu extrair o preço!');
+          result = {
+            success: true,
+            title: 'Produto encontrado via HTTP',
+            price: httpResult.price,
+            image: '',
+            selector: httpResult.selector
+          };
+        } else {
+          console.log('❌ Todos os métodos falharam');
+        }
+      } catch (httpError) {
+        console.error('❌ Erro no HTTP scraper:', httpError);
       }
     }
     
