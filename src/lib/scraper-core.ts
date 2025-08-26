@@ -744,10 +744,18 @@ export class PriceScraper {
       try {
         let browser: any;
         
-        if (process.env.NODE_ENV !== 'development') {
+        // Detectar ambiente Vercel de forma mais robusta
+        const isVercel = process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === 'production';
+        
+        if (isVercel) {
           // Configuração para produção/Vercel usando @sparticuz/chromium
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
           console.log('📦 Usando @sparticuz/chromium para compatibilidade serverless');
+          console.log('🌍 Variáveis de ambiente detectadas:', {
+            VERCEL: process.env.VERCEL,
+            VERCEL_ENV: process.env.VERCEL_ENV,
+            NODE_ENV: process.env.NODE_ENV
+          });
           
           // Desabilitar modo gráfico para melhor performance no Vercel
           chromium.setGraphicsMode = false;
@@ -755,6 +763,7 @@ export class PriceScraper {
           // Configurar cache directory se não estiver definido
           if (!process.env.PUPPETEER_CACHE_DIR) {
             process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
+            console.log('📁 Cache directory configurado:', process.env.PUPPETEER_CACHE_DIR);
           }
           
           const executablePath = await chromium.executablePath();
