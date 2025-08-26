@@ -869,7 +869,7 @@ export class PriceScraper {
           
           console.log('📍 Ambiente: Produção/Vercel');
           console.log('📍 Args:', launchOptions.args);
-          browser = await puppeteerCore.launch(launchOptions);
+          browser = await puppeteer.launch(launchOptions);
           this.browser = browser;
         } else {
           // Configuração para desenvolvimento local
@@ -888,7 +888,7 @@ export class PriceScraper {
           };
           
           console.log('📍 Ambiente: Desenvolvimento local');
-          browser = await puppeteerCore.launch(launchOptions);
+          browser = await puppeteer.launch(launchOptions);
           this.browser = browser;
         }
         console.log('✅ Puppeteer inicializado com sucesso');
