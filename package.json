@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@playwright/test": "^1.55.0",
     "@sparticuz/chromium-min": "^138.0.2",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
@@ -17,6 +18,7 @@
     "next": "15.5.0",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.66.0",
+    "playwright": "^1.55.0",
     "puppeteer": "^24.15.0",
     "puppeteer-core": "^24.15.0",
     "react": "19.1.0",

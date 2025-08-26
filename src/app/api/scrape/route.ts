@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPriceScraper } from '@/lib/scraper';
+import { getPlaywrightScraper } from '@/lib/scraper-playwright';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,15 +30,41 @@ export async function POST(request: NextRequest) {
       siteName = 'Ponto Frio';
     }
     
-    // Create a new scraper instance
+    // Tentar primeiro com Puppeteer
+    console.log('🎭 Tentando scraping com Puppeteer...');
     const scraper = createPriceScraper();
+    let result = await scraper.scrapeProductPage(url);
     
-    // Fazer o scraping da página do produto
-    const result = await scraper.scrapeProductPage(url);
+    // Se Puppeteer falhar, tentar com Playwright
+    if (!result.success) {
+      console.log('⚠️ Puppeteer falhou, tentando com Playwright...');
+      try {
+        const playwrightScraper = getPlaywrightScraper();
+        const playwrightResult = await playwrightScraper.scrapePriceAuto(url);
+        
+        if (playwrightResult.success) {
+          console.log('✅ Playwright conseguiu extrair o preço!');
+          result = {
+            success: true,
+            title: 'Produto encontrado via Playwright',
+            price: playwrightResult.price,
+            image: '',
+            selector: playwrightResult.selector
+          };
+        } else {
+          console.log('❌ Playwright também falhou');
+        }
+        
+        // Fechar o browser do Playwright
+        await playwrightScraper.close();
+      } catch (playwrightError) {
+        console.error('❌ Erro no Playwright:', playwrightError);
+      }
+    }
     
     if (!result.success) {
       return NextResponse.json({ 
-        error: result.error || 'Não foi possível extrair informações do produto' 
+        error: result.error || 'Não foi possível extrair informações do produto com nenhum método' 
       }, { status: 400 });
     }
     
