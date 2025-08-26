@@ -1,6 +1,8 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import * as cheerio from 'cheerio';
+import axios from 'axios';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -739,6 +741,86 @@ export class PriceScraper {
     }
   }
 
+  // Método de fallback usando fetch + cheerio
+  private async scrapePriceWithCheerio(url: string): Promise<ScrapingResult> {
+    try {
+      console.log('🔄 Tentando scraping com fetch + cheerio como fallback');
+      
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
+        },
+        timeout: 15000
+      });
+      
+      const $ = cheerio.load(response.data);
+      const domain = this.extractDomain(url);
+      
+      // Usar seletores conhecidos para o domínio
+      const knownSelectors = this.knownSelectors.get(domain) || [];
+      
+      for (const selector of knownSelectors) {
+        try {
+          const element = $(selector).first();
+          if (element.length > 0) {
+            const text = element.text().trim();
+            const price = this.extractPrice(text);
+            
+            if (price !== null && price > 0) {
+              console.log(`✅ Preço encontrado com cheerio (${selector}): R$ ${price}`);
+              return {
+                success: true,
+                price,
+                selector,
+                strategy: 'cheerio-fallback'
+              };
+            }
+          }
+        } catch (selectorError) {
+          console.log(`⚠️ Erro com seletor ${selector}:`, selectorError);
+        }
+      }
+      
+      // Busca genérica por padrões de preço
+      const priceRegex = /R\$\s*\d{1,3}(?:\.\d{3})*(?:,\d{2})?/g;
+      const bodyText = $('body').text();
+      const matches = bodyText.match(priceRegex);
+      
+      if (matches && matches.length > 0) {
+        // Pegar o primeiro preço válido encontrado
+        for (const match of matches) {
+          const price = this.extractPrice(match);
+          if (price !== null && price > 0 && price < 1000000) {
+            console.log(`✅ Preço encontrado com cheerio (regex): R$ ${price}`);
+            return {
+              success: true,
+              price,
+              selector: 'regex-pattern',
+              strategy: 'cheerio-regex'
+            };
+          }
+        }
+      }
+      
+      return {
+        success: false,
+        error: 'Nenhum preço encontrado com cheerio'
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro no fallback cheerio:', error);
+      return {
+        success: false,
+        error: `Erro no fallback cheerio: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      };
+    }
+  }
+
   async init() {
     if (!this.browser) {
       try {
@@ -1068,7 +1150,8 @@ export class PriceScraper {
       await this.init();
       
       if (!this.browser) {
-        throw new Error('Failed to initialize browser');
+        console.log('⚠️ Browser não inicializado, tentando fallback com cheerio');
+        return await this.scrapePriceWithCheerio(url);
       }
 
       const page = await this.browser.newPage();
@@ -1313,9 +1396,17 @@ export class PriceScraper {
         }
       }
       
+      // Se falhou com Puppeteer, tentar fallback com cheerio
+      console.log('⚠️ Puppeteer falhou, tentando fallback com cheerio');
+      const cheerioResult = await this.scrapePriceWithCheerio(url);
+      
+      if (cheerioResult.success) {
+        return cheerioResult;
+      }
+      
       return {
         success: false,
-        error: errorMessage
+        error: `Puppeteer: ${errorMessage} | Cheerio: ${cheerioResult.error}`
       };
     }
   }
@@ -1328,7 +1419,8 @@ export class PriceScraper {
       await this.init();
       
       if (!this.browser) {
-        throw new Error('Failed to initialize browser');
+        console.log('⚠️ Browser não inicializado, tentando fallback com cheerio');
+        return await this.scrapePriceWithCheerio(url);
       }
 
       const page = await this.browser.newPage();
@@ -1371,9 +1463,17 @@ export class PriceScraper {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
+      // Se falhou com Puppeteer, tentar fallback com cheerio
+      console.log('⚠️ Puppeteer falhou no scrapePrice, tentando fallback com cheerio');
+      const cheerioResult = await this.scrapePriceWithCheerio(url);
+      
+      if (cheerioResult.success) {
+        return cheerioResult;
+      }
+      
       return {
         success: false,
-        error: errorMessage
+        error: `Puppeteer: ${errorMessage} | Cheerio: ${cheerioResult.error}`
       };
     }
   }
