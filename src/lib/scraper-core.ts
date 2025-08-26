@@ -742,22 +742,29 @@ export class PriceScraper {
   async init() {
     if (!this.browser) {
       try {
-        // Detectar ambiente (desenvolvimento vs produção/Vercel)
-        const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+        // Detectar ambiente AWS Lambda/Vercel
+        const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_VERSION || !!process.env.VERCEL;
+        const isProduction = process.env.NODE_ENV === 'production';
         
         let launchOptions: any;
         
-        if (isProduction) {
-          // Configuração para Vercel/produção usando @sparticuz/chromium-min
-          console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
-          console.log('📦 Usando @sparticuz/chromium-min para serverless');
+        if (isLambda || isProduction) {
+          // Configuração para AWS Lambda/Vercel usando @sparticuz/chromium-min
+          console.log('🚀 Configurando Puppeteer para ambiente serverless (AWS Lambda/Vercel)');
+          console.log('📦 Usando @sparticuz/chromium-min para compatibilidade serverless');
           
-          // URL do Chromium tar hospedado externamente
-          const chromiumUrl = 'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar';
-          
+          // Usar chromium local sem URL externa para evitar problemas de download
           launchOptions = {
             args: [
               ...chromium.args,
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--single-process',
+              '--disable-gpu',
               '--hide-scrollbars',
               '--disable-web-security',
               '--disable-features=VizDisplayCompositor',
@@ -766,15 +773,14 @@ export class PriceScraper {
               '--disable-renderer-backgrounding'
             ],
             defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(chromiumUrl),
+            executablePath: await chromium.executablePath(),
             headless: chromium.headless,
             ignoreHTTPSErrors: true,
             timeout: 60000
           };
           
-          console.log('📍 Chromium URL:', chromiumUrl);
-          console.log('📍 Executable path:', await chromium.executablePath(chromiumUrl));
-          console.log('📍 Configuração final:', JSON.stringify(launchOptions, null, 2));
+          console.log('📍 Ambiente detectado: AWS Lambda/Vercel');
+          console.log('📍 Executable path:', await chromium.executablePath());
           this.browser = await puppeteerCore.launch(launchOptions)
         } else {
           // Configuração para desenvolvimento local
