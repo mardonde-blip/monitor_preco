@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -747,59 +748,28 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isProduction) {
-          // Configuração para Vercel/produção com detecção automática do Chrome
+          // Configuração para Vercel/produção usando @sparticuz/chromium
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
-          
-          // Tentar encontrar Chrome no sistema
-          const possiblePaths = [
-            '/usr/bin/google-chrome',
-            '/usr/bin/google-chrome-stable',
-            '/usr/bin/chromium',
-            '/usr/bin/chromium-browser',
-            '/opt/google/chrome/chrome',
-            process.env.CHROME_BIN || ''
-          ].filter(Boolean);
-          
-          let executablePath = '';
-          const fs = require('fs');
-          
-          for (const path of possiblePaths) {
-            try {
-              if (fs.existsSync(path)) {
-                executablePath = path;
-                console.log(`✅ Chrome encontrado em: ${path}`);
-                break;
-              }
-            } catch (error) {
-              console.log(`❌ Erro ao verificar ${path}:`, error.message);
-            }
-          }
-          
-          if (!executablePath) {
-            console.log('⚠️ Chrome não encontrado nos caminhos padrão, tentando sem executablePath');
-          }
+          console.log('📦 Usando @sparticuz/chromium para compatibilidade com serverless');
           
           launchOptions = {
-            headless: true,
-            ...(executablePath && { executablePath }),
             args: [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu',
-              '--no-first-run',
-              '--no-zygote',
-              '--single-process',
+              ...chromium.args,
+              '--hide-scrollbars',
               '--disable-web-security',
               '--disable-features=VizDisplayCompositor',
               '--disable-background-timer-throttling',
               '--disable-backgrounding-occluded-windows',
               '--disable-renderer-backgrounding'
             ],
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
             ignoreHTTPSErrors: true,
             timeout: 60000
           };
           
+          console.log('📍 Executable path:', await chromium.executablePath());
           console.log('📍 Configuração final:', JSON.stringify(launchOptions, null, 2));
           this.browser = await puppeteerCore.launch(launchOptions)
         } else {
