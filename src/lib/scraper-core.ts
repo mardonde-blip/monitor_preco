@@ -5,6 +5,60 @@ import * as cheerio from 'cheerio';
 import axios from 'axios';
 import { ScrapingResult } from '@/types';
 
+// Função auxiliar para determinar qual Puppeteer usar baseado no ambiente
+const getPuppeteerInstance = () => {
+  return process.env.VERCEL || process.env.NODE_ENV === 'production' ? puppeteerCore : puppeteer;
+};
+
+// Função auxiliar para obter configurações de launch baseadas no ambiente
+const getLaunchOptions = async () => {
+  const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    // Configuração para produção/Vercel
+    chromium.setGraphicsMode = false;
+    
+    if (!process.env.PUPPETEER_CACHE_DIR) {
+      process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
+    }
+    
+    const executablePath = await chromium.executablePath(
+      'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.tar'
+    );
+    
+    return {
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--hide-scrollbars',
+        '--disable-web-security'
+      ],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath,
+      headless: 'new',
+      ignoreHTTPSErrors: true,
+      timeout: 30000
+    };
+  } else {
+    // Configuração para desenvolvimento
+    return {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
+      ignoreHTTPSErrors: true,
+      timeout: 30000
+    };
+  }
+};
+
 interface SearchResultItem {
   title: string;
   price: number;
@@ -848,7 +902,10 @@ export class PriceScraper {
             console.log('📁 Cache directory configurado:', process.env.PUPPETEER_CACHE_DIR);
           }
           
-          const executablePath = await chromium.executablePath();
+          // Usar URL específica do tar file para melhor compatibilidade
+          const executablePath = await chromium.executablePath(
+            'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.tar'
+          );
           console.log('📍 Executable path:', executablePath);
           
           const launchOptions = {
@@ -858,18 +915,20 @@ export class PriceScraper {
               '--disable-setuid-sandbox',
               '--disable-dev-shm-usage',
               '--disable-gpu',
-              '--single-process'
+              '--single-process',
+              '--hide-scrollbars',
+              '--disable-web-security'
             ],
             defaultViewport: chromium.defaultViewport,
             executablePath: executablePath,
-            headless: chromium.headless,
+            headless: 'new',
             ignoreHTTPSErrors: true,
             timeout: 30000
           };
           
           console.log('📍 Ambiente: Produção/Vercel');
           console.log('📍 Args:', launchOptions.args);
-          browser = await puppeteer.launch(launchOptions);
+          browser = await puppeteerCore.launch(launchOptions);
           this.browser = browser;
         } else {
           // Configuração para desenvolvimento local
@@ -888,7 +947,8 @@ export class PriceScraper {
           };
           
           console.log('📍 Ambiente: Desenvolvimento local');
-          browser = await puppeteer.launch(launchOptions);
+          const puppeteerInstance = getPuppeteerInstance();
+          browser = await puppeteerInstance.launch(launchOptions);
           this.browser = browser;
         }
         console.log('✅ Puppeteer inicializado com sucesso');
@@ -898,7 +958,8 @@ export class PriceScraper {
         // Tentar configuração alternativa mais simples
         try {
           console.log('🔄 Tentando configuração alternativa...');
-          this.browser = await puppeteer.launch({
+          const puppeteerInstance = getPuppeteerInstance();
+          this.browser = await puppeteerInstance.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             timeout: 30000
