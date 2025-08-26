@@ -10,38 +10,40 @@ const getPuppeteerInstance = () => {
   return process.env.VERCEL || process.env.NODE_ENV === 'production' ? puppeteerCore : puppeteer;
 };
 
-// Função auxiliar para obter configurações de launch baseadas no ambiente
+// Configuração otimizada para Vercel 2024 - suporte a funções de até 250MB
+let browser: any;
+
 const getLaunchOptions = async () => {
   const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
   
   if (isProduction) {
-    // Configuração para produção/Vercel
-    chromium.setGraphicsMode = false;
+    // Configuração para Vercel 2024 - baseada no guia atualizado
+    const executablePath = await chromium.executablePath();
     
-    if (!process.env.PUPPETEER_CACHE_DIR) {
-      process.env.PUPPETEER_CACHE_DIR = '/tmp/.cache/puppeteer';
-    }
-    
-    const executablePath = await chromium.executablePath(
-      'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.tar'
-    );
+    // Args otimizados para performance em serverless
+    const chromeArgs = [
+      ...chromium.args,
+      '--font-render-hinting=none', // Melhora qualidade de renderização de fontes
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor',
+      '--run-all-compositor-stages-before-draw',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-ipc-flooding-protection'
+    ];
     
     return {
-      args: [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--single-process',
-        '--hide-scrollbars',
-        '--disable-web-security'
-      ],
+      args: chromeArgs,
       defaultViewport: chromium.defaultViewport,
       executablePath: executablePath,
-      headless: 'new',
+      headless: chromium.headless,
       ignoreHTTPSErrors: true,
-      timeout: 30000
+      timeout: 60000 // Timeout maior para serverless
     };
   } else {
     // Configuração para desenvolvimento
