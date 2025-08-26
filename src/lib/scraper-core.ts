@@ -1,5 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
+import chromium from '@sparticuz/chromium-min';
 import { ScrapingResult } from '@/types';
 
 interface SearchResultItem {
@@ -747,32 +748,34 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isProduction) {
-          // Configuração para Vercel/produção usando puppeteer com Chromium bundled
+          // Configuração para Vercel/produção usando @sparticuz/chromium-min
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
-          console.log('📦 Usando puppeteer com Chromium bundled');
+          console.log('📦 Usando @sparticuz/chromium-min para serverless');
+          
+          // URL do Chromium tar hospedado externamente
+          const chromiumUrl = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar';
           
           launchOptions = {
-            headless: true,
             args: [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu',
-              '--no-first-run',
-              '--no-zygote',
-              '--single-process',
+              ...chromium.args,
+              '--hide-scrollbars',
               '--disable-web-security',
               '--disable-features=VizDisplayCompositor',
               '--disable-background-timer-throttling',
               '--disable-backgrounding-occluded-windows',
               '--disable-renderer-backgrounding'
             ],
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(chromiumUrl),
+            headless: chromium.headless,
             ignoreHTTPSErrors: true,
             timeout: 60000
           };
           
+          console.log('📍 Chromium URL:', chromiumUrl);
+          console.log('📍 Executable path:', await chromium.executablePath(chromiumUrl));
           console.log('📍 Configuração final:', JSON.stringify(launchOptions, null, 2));
-          this.browser = await puppeteer.launch(launchOptions)
+          this.browser = await puppeteerCore.launch(launchOptions)
         } else {
           // Configuração para desenvolvimento local
           launchOptions = {
