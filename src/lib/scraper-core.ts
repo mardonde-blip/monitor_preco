@@ -1,8 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
 import { ScrapingResult } from '@/types';
-import chromium from '@sparticuz/chromium';
-import { install, canDownload } from '@puppeteer/browsers';
 
 interface SearchResultItem {
   title: string;
@@ -749,50 +747,61 @@ export class PriceScraper {
         let launchOptions: any;
         
         if (isProduction) {
-          // Configuração para Vercel/produção usando @puppeteer/browsers
+          // Configuração para Vercel/produção com detecção automática do Chrome
           console.log('🚀 Configurando Puppeteer para ambiente de produção (Vercel)');
           
-          try {
-            // Tentar usar @sparticuz/chromium primeiro
-            const executablePath = await chromium.executablePath();
-            console.log('📍 Usando @sparticuz/chromium, executable path:', executablePath);
-            
-            launchOptions = {
-              args: chromium.args,
-              defaultViewport: chromium.defaultViewport,
-              executablePath: executablePath,
-              headless: chromium.headless,
-              ignoreHTTPSErrors: true,
-              timeout: 60000
-            };
-            
-            this.browser = await puppeteerCore.launch(launchOptions);
-          } catch (chromiumError) {
-            console.log('⚠️ Falha com @sparticuz/chromium, tentando @puppeteer/browsers...');
-            console.error('Erro chromium:', chromiumError);
-            
-            // Fallback para @puppeteer/browsers
-            const browserFetcher = puppeteer.createBrowserFetcher();
-            const revisionInfo = await browserFetcher.download('1095492'); // Chrome stable
-            
-            launchOptions = {
-              executablePath: revisionInfo.executablePath,
-              headless: true,
-              args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-first-run',
-                '--no-zygote',
-                '--single-process'
-              ],
-              ignoreHTTPSErrors: true,
-              timeout: 60000
-            };
-            
-            this.browser = await puppeteerCore.launch(launchOptions);
+          // Tentar encontrar Chrome no sistema
+          const possiblePaths = [
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/opt/google/chrome/chrome',
+            process.env.CHROME_BIN || ''
+          ].filter(Boolean);
+          
+          let executablePath = '';
+          const fs = require('fs');
+          
+          for (const path of possiblePaths) {
+            try {
+              if (fs.existsSync(path)) {
+                executablePath = path;
+                console.log(`✅ Chrome encontrado em: ${path}`);
+                break;
+              }
+            } catch (error) {
+              console.log(`❌ Erro ao verificar ${path}:`, error.message);
+            }
           }
+          
+          if (!executablePath) {
+            console.log('⚠️ Chrome não encontrado nos caminhos padrão, tentando sem executablePath');
+          }
+          
+          launchOptions = {
+            headless: true,
+            ...(executablePath && { executablePath }),
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-gpu',
+              '--no-first-run',
+              '--no-zygote',
+              '--single-process',
+              '--disable-web-security',
+              '--disable-features=VizDisplayCompositor',
+              '--disable-background-timer-throttling',
+              '--disable-backgrounding-occluded-windows',
+              '--disable-renderer-backgrounding'
+            ],
+            ignoreHTTPSErrors: true,
+            timeout: 60000
+          };
+          
+          console.log('📍 Configuração final:', JSON.stringify(launchOptions, null, 2));
+          this.browser = await puppeteerCore.launch(launchOptions)
         } else {
           // Configuração para desenvolvimento local
           launchOptions = {
