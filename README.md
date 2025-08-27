@@ -2,6 +2,8 @@
 
 Uma aplicação Next.js para monitorar preços de produtos online e receber notificações via Telegram quando os preços caem.
 
+> Última atualização: Campo de preço alvo movido para página individual de monitoramento
+
 ## 🚀 Funcionalidades
 
 - ✅ **Interface Web Moderna**: Adicione e gerencie produtos para monitorar
