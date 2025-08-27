@@ -10,39 +10,76 @@ const getPuppeteerInstance = () => {
   return process.env.VERCEL || process.env.NODE_ENV === 'production' ? puppeteerCore : puppeteer;
 };
 
-// Configuração otimizada para Vercel 2024 - suporte a funções de até 250MB
+// Configuração otimizada para Vercel 2024 com fallbacks robustos
 const getLaunchOptions = async () => {
   const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
   
   if (isProduction) {
-    // Configuração para Vercel 2024 - baseada no guia atualizado
-    const executablePath = await chromium.executablePath();
-    
-    // Args otimizados para performance em serverless
-    const chromeArgs = [
-      ...chromium.args,
-      '--font-render-hinting=none', // Melhora qualidade de renderização de fontes
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--disable-web-security',
-      '--disable-features=VizDisplayCompositor',
-      '--run-all-compositor-stages-before-draw',
-      '--disable-background-timer-throttling',
-      '--disable-renderer-backgrounding',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-ipc-flooding-protection'
-    ];
-    
-    return {
-      args: chromeArgs,
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath: executablePath,
-      headless: true,
-      ignoreHTTPSErrors: true,
-      timeout: 60000 // Timeout maior para serverless
-    };
+    try {
+      // Configuração para Vercel 2024 - versão corrigida
+      const executablePath = await chromium.executablePath({
+        // Força o download se necessário
+        revision: '1095492', // Versão estável conhecida
+      });
+      
+      console.log('Chromium executable path:', executablePath);
+      
+      // Args otimizados para Vercel serverless
+      const chromeArgs = [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--run-all-compositor-stages-before-draw',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-ipc-flooding-protection',
+        '--font-render-hinting=none',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update',
+        '--ignore-gpu-blacklist',
+        '--ignore-certificate-errors',
+        '--ignore-ssl-errors',
+        '--ignore-certificate-errors-spki-list'
+      ];
+      
+      return {
+        args: chromeArgs,
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath: executablePath,
+        headless: true,
+        ignoreHTTPSErrors: true,
+        timeout: 90000 // Timeout maior para inicialização
+      };
+    } catch (error) {
+      console.error('Erro ao configurar Chromium:', error);
+      // Fallback: tentar sem executablePath específico
+      return {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security'
+        ],
+        defaultViewport: { width: 1920, height: 1080 },
+        headless: true,
+        ignoreHTTPSErrors: true,
+        timeout: 90000
+      };
+    }
   } else {
     // Configuração para desenvolvimento
     return {
@@ -875,6 +912,128 @@ export class PriceScraper {
     }
   }
 
+  // Fallback HTTP simples para quando tudo mais falha
+  private async fallbackHTTP(url: string): Promise<ScrapingResult> {
+    try {
+      console.log('🌐 Tentando fallback HTTP simples...');
+      
+      // Configuração robusta para diferentes tipos de sites
+      const axiosConfig = {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+          'DNT': '1'
+        },
+        timeout: 15000,
+        maxRedirects: 10,
+        validateStatus: (status: number) => status < 500, // Aceitar redirects e erros 4xx
+        maxContentLength: 50 * 1024 * 1024, // 50MB max
+        maxBodyLength: 50 * 1024 * 1024
+      };
+
+      const response = await axios.get(url, axiosConfig);
+      
+      if (!response.data || typeof response.data !== 'string') {
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      // Análise de texto simples sem DOM parsing
+      const content = response.data.toLowerCase();
+      const originalContent = response.data;
+      
+      // Padrões de preço mais robustos
+      const pricePatterns = [
+        // Padrão brasileiro completo: R$ 1.234,56
+        /r\$\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)/gi,
+        // Padrão sem símbolo: 1.234,56
+        /(?:^|\s)([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})(?=\s|$)/g,
+        // Padrão americano: $1,234.56 (para sites internacionais)
+        /\$\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)/g,
+        // Números com vírgula decimal
+        /([0-9]+,[0-9]{2})/g
+      ];
+
+      const foundPrices: number[] = [];
+      
+      for (const pattern of pricePatterns) {
+        const matches = originalContent.match(pattern);
+        if (matches) {
+          for (const match of matches) {
+            const price = this.extractPrice(match);
+            if (price !== null && price > 0 && price < 1000000) {
+              foundPrices.push(price);
+            }
+          }
+        }
+      }
+
+      if (foundPrices.length > 0) {
+        // Pegar o preço mais provável (mediana para evitar outliers)
+        foundPrices.sort((a, b) => a - b);
+        const medianPrice = foundPrices[Math.floor(foundPrices.length / 2)];
+        
+        console.log(`✅ Preço encontrado com HTTP simples: R$ ${medianPrice}`);
+        console.log(`📊 Total de preços encontrados: ${foundPrices.length}`);
+        
+        return {
+          success: true,
+          price: medianPrice,
+          selector: 'http-text-analysis',
+          strategy: 'http-fallback'
+        };
+      }
+
+      // Busca por contexto de preço (palavras próximas a números)
+      const contextPatterns = [
+        /(?:preço|price|valor|custo|por)\s*:?\s*r?\$?\s*([0-9.,]+)/gi,
+        /([0-9.,]+)\s*(?:reais?|real|brl)/gi,
+        /(?:de|por)\s+r?\$?\s*([0-9.,]+)/gi
+      ];
+
+      for (const pattern of contextPatterns) {
+        const matches = originalContent.match(pattern);
+        if (matches) {
+          for (const match of matches) {
+            const price = this.extractPrice(match);
+            if (price !== null && price > 0 && price < 1000000) {
+              console.log(`✅ Preço encontrado por contexto: R$ ${price}`);
+              return {
+                success: true,
+                price,
+                selector: 'context-analysis',
+                strategy: 'http-context'
+              };
+            }
+          }
+        }
+      }
+
+      return {
+        success: false,
+        error: 'Nenhum preço encontrado na análise HTTP'
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro no fallback HTTP:', error);
+      return {
+        success: false,
+        error: `Erro no fallback HTTP: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      };
+    }
+  }
+
   async init() {
     if (!this.browser) {
       try {
@@ -1397,17 +1556,23 @@ export class PriceScraper {
         }
       }
       
-      // Se falhou com Puppeteer, tentar fallback com cheerio
-      console.log('⚠️ Puppeteer falhou, tentando fallback com cheerio');
-      const cheerioResult = await this.scrapePriceWithCheerio(url);
+      // Se falhou com Puppeteer, tentar fallbacks
+      console.log('⚠️ Puppeteer falhou, tentando fallbacks...');
       
+      const cheerioResult = await this.scrapePriceWithCheerio(url);
       if (cheerioResult.success) {
         return cheerioResult;
       }
       
+      console.log('🌐 Cheerio falhou, tentando HTTP simples...');
+      const httpResult = await this.fallbackHTTP(url);
+      if (httpResult.success) {
+        return httpResult;
+      }
+      
       return {
         success: false,
-        error: `Puppeteer: ${errorMessage} | Cheerio: ${cheerioResult.error}`
+        error: `Puppeteer: ${errorMessage} | Cheerio: ${cheerioResult.error} | HTTP: ${httpResult.error}`
       };
     }
   }

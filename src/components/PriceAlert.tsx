@@ -15,6 +15,7 @@ interface AlertData {
   productUrl: string;
   targetPrice: number;
   currentPrice: number;
+  referencePrice?: number;
   email?: string;
   phone?: string;
   notificationMethod: 'email' | 'sms' | 'both';
@@ -23,19 +24,20 @@ interface AlertData {
 export default function PriceAlert({ productTitle, currentPrice, productUrl, onCreateAlert }: PriceAlertProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [targetPrice, setTargetPrice] = useState(Math.round(currentPrice * 0.9)); // 10% de desconto por padrão
+  const [referencePrice, setReferencePrice] = useState(currentPrice);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notificationMethod, setNotificationMethod] = useState<'email' | 'sms' | 'both'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const discountPercentage = Math.round(((currentPrice - targetPrice) / currentPrice) * 100);
+  const discountPercentage = Math.round(((referencePrice - targetPrice) / referencePrice) * 100);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (targetPrice >= currentPrice) {
-      alert('O preço alvo deve ser menor que o preço atual');
+    if (targetPrice >= referencePrice) {
+      alert('O preço alvo deve ser menor que o preço de referência');
       return;
     }
     
@@ -56,6 +58,7 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
       productUrl,
       targetPrice,
       currentPrice,
+      referencePrice,
       email: email || undefined,
       phone: phone || undefined,
       notificationMethod
@@ -140,6 +143,28 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
               <p className="text-sm text-gray-600">Preço atual: <span className="font-semibold">{formatPrice(currentPrice)}</span></p>
             </div>
 
+            {/* Reference Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preço de Referência (R$)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                <input
+                  type="number"
+                  value={referencePrice}
+                  onChange={(e) => setReferencePrice(Number(e.target.value))}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  min="1"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Este será o preço usado como base para comparação e cálculo de descontos.
+              </p>
+            </div>
+
             {/* Target Price */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -153,14 +178,14 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
                   onChange={(e) => setTargetPrice(Number(e.target.value))}
                   className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   min="1"
-                  max={currentPrice - 1}
+                  max={referencePrice - 1}
                   step="0.01"
                   required
                 />
               </div>
               {discountPercentage > 0 && (
                 <p className="text-sm text-green-600 mt-1">
-                  💰 Economia de {discountPercentage}% ({formatPrice(currentPrice - targetPrice)})
+                  💰 Economia de {discountPercentage}% ({formatPrice(referencePrice - targetPrice)})
                 </p>
               )}
             </div>

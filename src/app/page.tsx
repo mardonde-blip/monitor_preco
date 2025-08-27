@@ -13,8 +13,8 @@ export default function Home() {
   const [productName, setProductName] = useState('');
   const [productUrl, setProductUrl] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
-  const [referencePrice, setReferencePrice] = useState('');
-  const [targetPrice, setTargetPrice] = useState('');
+
+
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
@@ -165,13 +165,15 @@ export default function Home() {
   };
 
   const handleAddNewProduct = () => {
-    if (!productName || !productUrl || !targetPrice) {
+    if (!productName || !productUrl) {
       alert('Por favor, preencha todos os campos');
       return;
     }
     
-    // Usar preço de referência se fornecido, senão usar preço atual detectado, senão usar preço alvo
-    const initialPriceToUse = referencePrice || currentPrice || targetPrice;
+    // Usar preço atual detectado se disponível
+    const currentValue = currentPrice && parseFloat(currentPrice) > 0 ? parseFloat(currentPrice) : null;
+    
+    const initialPriceToUse = currentValue || 0;
     const hasDetectedPrice = !!currentPrice;
 
     const newProduct: Product = {
@@ -180,7 +182,7 @@ export default function Home() {
       url: productUrl,
       initialPrice: parseFloat(initialPriceToUse),
       currentPrice: hasDetectedPrice ? parseFloat(currentPrice) : undefined,
-      targetPrice: parseFloat(targetPrice),
+      targetPrice: hasDetectedPrice ? parseFloat(currentPrice) * 0.9 : 0, // 10% de desconto como meta padrão
       selector: 'auto',
       addedAt: new Date().toISOString(),
       lastChecked: hasDetectedPrice ? new Date().toISOString() : undefined,
@@ -199,8 +201,6 @@ export default function Home() {
     setProductName('');
     setProductUrl('');
     setCurrentPrice('');
-    setReferencePrice('');
-    setTargetPrice('');
     
     alert('Produto adicionado ao monitoramento!');
   };
@@ -420,36 +420,8 @@ export default function Home() {
                   </div>
                 )}
                 
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preço de Referência (R$) - Opcional
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={referencePrice}
-                    onChange={(e) => setReferencePrice(e.target.value)}
-                    placeholder="0,00 - Deixe vazio para usar o preço atual detectado"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Este será o preço usado como base para comparação. Se não preenchido, usará o preço atual detectado automaticamente.
-                  </p>
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preço Alvo (R$)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={targetPrice}
-                    onChange={(e) => setTargetPrice(e.target.value)}
-                    placeholder="0,00"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+
+
                 
                 <button 
                   onClick={handleAddNewProduct}
