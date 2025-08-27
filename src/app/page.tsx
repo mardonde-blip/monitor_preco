@@ -180,7 +180,7 @@ export default function Home() {
       id: Date.now().toString(),
       name: productName,
       url: productUrl,
-      initialPrice: parseFloat(initialPriceToUse),
+      initialPrice: initialPriceToUse,
       currentPrice: hasDetectedPrice ? parseFloat(currentPrice) : undefined,
       targetPrice: hasDetectedPrice ? parseFloat(currentPrice) * 0.9 : 0, // 10% de desconto como meta padrão
       selector: 'auto',
