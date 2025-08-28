@@ -25,12 +25,21 @@ export class PriceMonitorScheduler {
     }
 
     // Converte minutos para formato cron (a cada X minutos)
-    const cronExpression = `*/${intervalMinutes} * * * *`;
+    // Para intervalos maiores que 59 minutos, usa uma abordagem diferente
+    let cronExpression: string;
+    
+    if (intervalMinutes <= 59) {
+      cronExpression = `*/${intervalMinutes} * * * *`;
+    } else {
+      // Para intervalos de horas, converte para horas
+      const hours = Math.floor(intervalMinutes / 60);
+      cronExpression = `0 */${hours} * * *`;
+    }
     
     this.cronJob = cron.schedule(cronExpression, async () => {
       await this.runMonitoringCycle();
     }, {
-      // scheduled: false // Removido - não é uma propriedade válida
+      timezone: 'America/Sao_Paulo'
     });
 
     this.cronJob.start();
@@ -128,14 +137,15 @@ export class PriceMonitorScheduler {
       
       LocalStorage.updateProduct(updatedProduct.id, updatedProduct);
       
-      // Verifica se houve queda de preço abaixo do valor inicial
-      const priceDropped = newPrice !== null && newPrice !== undefined && newPrice < product.initialPrice;
+      // Verifica se houve queda de preço abaixo do valor alvo (ou inicial se não definido)
+      const targetPrice = product.targetPrice || product.initialPrice;
+      const priceDropped = newPrice !== null && newPrice !== undefined && newPrice <= targetPrice;
       
       if (priceDropped) {
         await this.sendPriceAlert(updatedProduct);
       }
       
-      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (referência: R$ ${product.initialPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
+      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (alvo: R$ ${targetPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
       
       if (priceDropped) {
         console.log(`🎯 ALERTA: Preço de ${product.name} baixou para R$ ${newPrice?.toFixed(2) || 'N/A'}!`);
@@ -162,9 +172,10 @@ export class PriceMonitorScheduler {
         chatId: notificationSettings.telegram.chatId
       });
       
+      const referencePrice = product.targetPrice || product.initialPrice;
       await this.telegramNotifier.sendPriceAlert(
         product,
-        product.initialPrice,
+        referencePrice,
         product.currentPrice!
       );
       
