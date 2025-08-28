@@ -17,10 +17,7 @@ const getLaunchOptions = async () => {
   if (isProduction) {
     try {
       // Configuração para Vercel 2024 - versão corrigida
-      const executablePath = await chromium.executablePath({
-        // Força o download se necessário
-        revision: '1095492', // Versão estável conhecida
-      });
+      const executablePath = await chromium.executablePath();
       
       console.log('Chromium executable path:', executablePath);
       
