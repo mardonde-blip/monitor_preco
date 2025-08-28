@@ -52,9 +52,11 @@ export class TelegramNotifier {
   }
 
   private formatPriceAlertMessage(product: Product, oldPrice: number, newPrice: number, discount: string): string {
+    const targetPriceText = product.targetPrice ? `🎯 Preço alvo: R$ ${product.targetPrice.toFixed(2)}\n` : '';
     return `🚨 <b>ALERTA DE PREÇO!</b>\n\n` +
            `📦 <b>${product.name}</b>\n\n` +
            `📊 Preço de referência: R$ ${product.initialPrice.toFixed(2)}\n` +
+           targetPriceText +
            `🔥 <b>Preço atual: R$ ${newPrice.toFixed(2)}</b>\n` +
            `📉 Desconto: <b>${discount}%</b>\n\n` +
            `🛒 <a href="${product.url}">Ver produto</a>\n\n` +

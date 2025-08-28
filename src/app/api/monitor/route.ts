@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
           const newPrice = scrapingResult.price;
           const currentPrice = product.currentPrice || product.initialPrice;
           
-          // Check if price dropped below initial price
-          const priceDropped = newPrice < product.initialPrice;
+          // Check if price dropped below target price
+          const priceDropped = product.targetPrice ? newPrice <= product.targetPrice : newPrice < product.initialPrice;
           
           if (priceDropped && settings.enabled) {
             await telegramNotifier.sendPriceAlert(product, currentPrice, newPrice);
