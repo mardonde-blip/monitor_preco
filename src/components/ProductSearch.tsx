@@ -21,6 +21,7 @@ export default function ProductSearch({ onAddToMonitor }: ProductSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchError, setSearchError] = useState('');
   const [searchStats, setSearchStats] = useState<{
     totalResults: number;
     searchTime: number;
@@ -29,14 +30,30 @@ export default function ProductSearch({ onAddToMonitor }: ProductSearchProps) {
   } | null>(null);
   const router = useRouter();
 
+  const validateSearch = (term: string) => {
+    if (!term.trim()) {
+      return 'Digite um termo de busca';
+    }
+    if (term.trim().length < 2) {
+      return 'O termo de busca deve ter pelo menos 2 caracteres';
+    }
+    return '';
+  };
+
+  const clearSearchError = () => {
+    setSearchError('');
+  };
+
   const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      setError('Digite um termo de busca');
+    const validationError = validateSearch(searchTerm);
+    if (validationError) {
+      setSearchError(validationError);
       return;
     }
 
     setLoading(true);
     setError('');
+    setSearchError('');
     setSearchStats(null);
     
     const searchStartTime = Date.now();
@@ -113,6 +130,109 @@ export default function ProductSearch({ onAddToMonitor }: ProductSearchProps) {
           Digite o nome do produto e encontre as melhores ofertas
         </p>
       </div>
+
+      {/* Search Form */}
+      <div className="max-w-2xl mx-auto mb-8">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              clearSearchError();
+            }}
+            onKeyPress={handleKeyPress}
+            placeholder="Ex: iPhone 15, Samsung Galaxy, Notebook Dell..."
+            className={`w-full px-4 py-3 pr-12 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              searchError ? 'border-red-500' : 'border-gray-300'
+            }`}
+            disabled={loading}
+          />
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-gray-500 hover:text-blue-600 disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Search className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+        
+        {searchError && (
+          <p className="text-red-500 text-sm mt-2">{searchError}</p>
+        )}
+        
+        {error && (
+          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Search Stats */}
+      {searchStats && (
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div className="flex items-center justify-center mb-4">
+              <TrendingUp className="w-6 h-6 text-green-600 mr-2" />
+              <h3 className="text-lg font-semibold text-green-800">
+                Busca realizada com sucesso!
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-center mb-2">
+                  <Search className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {searchStats.totalResults}
+                </div>
+                <div className="text-sm text-gray-600">Resultados</div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-center mb-2">
+                  <Clock className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {searchStats.searchTime.toFixed(1)}s
+                </div>
+                <div className="text-sm text-gray-600">Tempo</div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-center mb-2">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  R$ {searchStats.lowestPrice.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-600">Menor Preço</div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center justify-center mb-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  R$ {searchStats.averagePrice.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-600">Preço Médio</div>
+              </div>
+            </div>
+            
+            <div className="mt-4 text-center">
+              <p className="text-green-700">
+                Redirecionando para os resultados...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

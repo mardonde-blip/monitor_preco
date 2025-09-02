@@ -11,18 +11,23 @@
   "dependencies": {
     "@playwright/test": "^1.55.0",
     "@sparticuz/chromium-min": "^138.0.2",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/nodemailer": "^7.0.1",
     "axios": "^1.11.0",
+    "better-sqlite3": "^12.2.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
     "lucide-react": "^0.541.0",
     "next": "15.5.0",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.66.0",
+    "nodemailer": "^7.0.6",
     "playwright": "^1.55.0",
     "puppeteer": "^24.15.0",
     "puppeteer-core": "^24.15.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

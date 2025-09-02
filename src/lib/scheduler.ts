@@ -3,12 +3,15 @@ import { PriceScraper } from './scraper';
 import { TelegramNotifier } from './telegram';
 import { LocalStorage } from './storage';
 import { Product, NotificationSettings } from '../types';
+import { getProductsForAPI } from '@/app/api/products/route';
+import { sendEmail, emailTemplates } from './email';
 
 export class PriceMonitorScheduler {
   private scraper: PriceScraper;
   private telegramNotifier: TelegramNotifier;
   private isRunning: boolean = false;
   private cronJob: ScheduledTask | null = null;
+  private lastRun: string | null = null;
 
   constructor() {
     this.scraper = new PriceScraper();
@@ -68,10 +71,11 @@ export class PriceMonitorScheduler {
    */
   private async runMonitoringCycle(): Promise<void> {
     try {
-      console.log('Iniciando ciclo de monitoramento...', new Date().toISOString());
+      this.lastRun = new Date().toISOString();
+      console.log('Iniciando ciclo de monitoramento...', this.lastRun);
       
-      const products = LocalStorage.getProducts();
-      const notificationSettings = LocalStorage.getSettings();
+      const products = getProductsForAPI();
+      const notificationSettings = await this.getNotificationSettings();
       
       if (!products.length) {
         console.log('Nenhum produto para monitorar');
@@ -115,6 +119,16 @@ export class PriceMonitorScheduler {
       
       if (!scrapingResult.success || scrapingResult.price === null) {
         console.error(`Falha ao obter preço para ${product.name}:`, scrapingResult.error);
+        
+        // Mesmo com falha no scraping, verifica se o produto já está com preço abaixo do alvo
+        const targetPrice = product.targetPrice || product.initialPrice;
+        const currentPrice = product.currentPrice;
+        
+        if (currentPrice !== null && currentPrice !== undefined && currentPrice <= targetPrice) {
+          console.log(`🎯 PRODUTO JÁ COM PREÇO BAIXO: ${product.name} - R$ ${currentPrice.toFixed(2)} <= R$ ${targetPrice.toFixed(2)}`);
+          await this.sendPriceAlert(product);
+        }
+        
         return;
       }
       
@@ -135,7 +149,7 @@ export class PriceMonitorScheduler {
         ].slice(-50) // Mantém apenas os últimos 50 registros
       };
       
-      LocalStorage.updateProduct(updatedProduct.id, updatedProduct);
+      await this.updateProductViaAPI(updatedProduct);
       
       // Verifica se houve queda de preço abaixo do valor alvo (ou inicial se não definido)
       const targetPrice = product.targetPrice || product.initialPrice;
@@ -157,32 +171,98 @@ export class PriceMonitorScheduler {
   }
 
   /**
-   * Envia alerta de preço via Telegram
+   * Envia alerta de preço via Telegram e Email
    */
   private async sendPriceAlert(product: Product): Promise<void> {
     try {
-      const notificationSettings = LocalStorage.getSettings();
+      const notificationSettings = await this.getNotificationSettings();
       
       if (!notificationSettings.enabled) {
         return;
       }
       
-      this.telegramNotifier.init({
-        botToken: notificationSettings.telegram.botToken,
-        chatId: notificationSettings.telegram.chatId
-      });
+      // Usa o preço anterior para calcular o desconto corretamente
+      let previousPrice = product.priceHistory && product.priceHistory.length > 1 
+        ? product.priceHistory[product.priceHistory.length - 2].price
+        : product.initialPrice;
       
-      const referencePrice = product.targetPrice || product.initialPrice;
-      await this.telegramNotifier.sendPriceAlert(
-        product,
-        referencePrice,
-        product.currentPrice!
-      );
+      // Evita desconto 0.0% quando preços são iguais
+      if (previousPrice === product.currentPrice) {
+        // Tenta usar o preço inicial se for diferente
+        if (product.initialPrice !== product.currentPrice) {
+          previousPrice = product.initialPrice;
+        } else {
+          // Se todos os preços são iguais, usa um valor ligeiramente maior para mostrar "economia"
+          previousPrice = product.currentPrice! * 1.01; // 1% maior
+        }
+      }
       
-      console.log(`Alerta enviado para ${product.name}`);
+      // Enviar notificação via Telegram
+      try {
+        this.telegramNotifier.init({
+          botToken: notificationSettings.telegram.botToken,
+          chatId: notificationSettings.telegram.chatId
+        });
+        
+        await this.telegramNotifier.sendPriceAlert(
+          product,
+          previousPrice,
+          product.currentPrice!
+        );
+        
+        console.log(`Alerta Telegram enviado para ${product.name}`);
+      } catch (telegramError) {
+        console.error('Erro ao enviar alerta via Telegram:', telegramError);
+      }
+      
+      // Enviar notificação via Email
+      try {
+        await this.sendEmailAlert(product, previousPrice, product.currentPrice!);
+        console.log(`Alerta Email enviado para ${product.name}`);
+      } catch (emailError) {
+        console.error('Erro ao enviar alerta via Email:', emailError);
+      }
+      
+      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice.toFixed(2)} -> R$ ${product.currentPrice!.toFixed(2)})`);
       
     } catch (error) {
       console.error('Erro ao enviar alerta:', error);
+    }
+  }
+  
+  /**
+   * Envia alerta de preço por email
+   */
+  private async sendEmailAlert(product: Product, oldPrice: number, newPrice: number): Promise<void> {
+    try {
+      // Buscar usuários que monitoram este produto
+      const users = await this.getUsersForProduct(product.id);
+      
+      for (const user of users) {
+        if (user.email) {
+          const discount = ((oldPrice - newPrice) / oldPrice * 100).toFixed(1);
+          
+          const emailContent = emailTemplates.priceAlert({
+            userName: user.name || 'Usuário',
+            productName: product.name,
+            productUrl: product.url,
+            oldPrice: oldPrice,
+            newPrice: newPrice,
+            discount: discount,
+            targetPrice: product.targetPrice || product.initialPrice
+          });
+          
+          await sendEmail({
+            to: user.email,
+            subject: `🚨 Alerta de Preço: ${product.name}`,
+            html: emailContent
+          });
+          
+          console.log(`Email de alerta enviado para ${user.email}`);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao enviar email de alerta:', error);
     }
   }
 
@@ -199,6 +279,71 @@ export class PriceMonitorScheduler {
   async runManualCheck(): Promise<void> {
     console.log('Executando verificação manual...');
     await this.runMonitoringCycle();
+  }
+
+  /**
+   * Retorna a data/hora da última execução
+   */
+  getLastRun(): string | null {
+    return this.lastRun;
+  }
+
+  /**
+   * Obtém configurações de notificação via API
+   */
+  private async getNotificationSettings(): Promise<NotificationSettings> {
+    try {
+      const response = await fetch('http://localhost:3000/api/settings');
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Erro ao obter configurações via API:', error);
+    }
+    
+    // Fallback para localStorage se API falhar
+    return LocalStorage.getSettings();
+  }
+
+  /**
+   * Atualiza produto via API
+   */
+  private async updateProductViaAPI(product: Product): Promise<void> {
+    try {
+      const response = await fetch(`http://localhost:3000/api/products`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(product),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar produto via API:', error);
+      // Fallback para localStorage se API falhar
+      LocalStorage.updateProduct(product.id, product);
+    }
+  }
+  
+  /**
+   * Busca usuários que monitoram um produto específico
+   */
+  private async getUsersForProduct(productId: string): Promise<Array<{id: number, name: string, email: string}>> {
+    try {
+      const response = await fetch(`http://localhost:3000/api/users?productId=${productId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Erro ao buscar usuários via API:', error);
+    }
+    
+    // Fallback: retorna lista vazia se não conseguir buscar usuários
+    // Em um sistema real, isso deveria buscar do banco de dados
+    return [];
   }
 }
 

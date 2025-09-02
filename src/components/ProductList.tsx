@@ -61,6 +61,16 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
     }
   };
 
+  const calculateDiscountPercentage = (currentPrice: number | undefined, targetPrice: number) => {
+    if (!currentPrice || currentPrice <= 0 || targetPrice <= 0) return 0;
+    return Math.round(((currentPrice - targetPrice) / currentPrice) * 100);
+  };
+
+  const calculateSavings = (currentPrice: number | undefined, targetPrice: number) => {
+    if (!currentPrice || currentPrice <= targetPrice) return 0;
+    return currentPrice - targetPrice;
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Produtos Monitorados</h2>
@@ -94,7 +104,7 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
                   <button
                     onClick={() => {
                       setEditingProduct(product.id);
-                      setEditPrice(product.initialPrice.toString());
+                      setEditPrice((product.targetPrice || product.initialPrice).toString());
                     }}
                     className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -111,7 +121,7 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Preço de Referência:</span>
+                  <span className="text-gray-500">Preço Alvo:</span>
                   {editingProduct === product.id ? (
                     <div className="flex items-center space-x-2 mt-1">
                       <input
@@ -146,7 +156,7 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
                       </button>
                     </div>
                   ) : (
-                    <p className="font-semibold text-lg">{formatPrice(product.initialPrice)}</p>
+                    <p className="font-semibold text-lg">{formatPrice(product.targetPrice || product.initialPrice)}</p>
                   )}
                 </div>
                 
@@ -155,6 +165,19 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
                   <p className="font-semibold text-lg">
                     {product.currentPrice ? formatPrice(product.currentPrice) : 'Não verificado'}
                   </p>
+                  {product.currentPrice && product.targetPrice && (
+                    <div className="mt-1">
+                      {product.currentPrice <= product.targetPrice ? (
+                        <p className="text-xs text-green-600 font-medium">
+                          🎯 Meta atingida!
+                        </p>
+                      ) : (
+                        <p className="text-xs text-blue-600">
+                          💰 {calculateDiscountPercentage(product.currentPrice, product.targetPrice)}% de economia potencial
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div>

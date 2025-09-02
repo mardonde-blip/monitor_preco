@@ -1,0 +1,178 @@
+[
+  {
+    "name": "Produto Teste Desconto",
+    "initialPrice": 120,
+    "targetPrice": 80,
+    "priceHistory": [
+      {
+        "price": 120,
+        "date": "2024-01-20T10:00:00Z"
+      },
+      {
+        "price": 110,
+        "date": "2024-01-21T10:00:00Z"
+      },
+      {
+        "price": 100,
+        "date": "2024-01-22T10:00:00Z"
+      }
+    ],
+    "url": "https://example.com/produto-teste",
+    "currentPrice": 100,
+    "id": "1756694890974",
+    "createdAt": "2025-09-01T02:48:10.974Z",
+    "updatedAt": "2025-09-01T02:48:10.974Z"
+  },
+  {
+    "name": "Produto Alerta Teste",
+    "initialPrice": 100,
+    "targetPrice": 75,
+    "priceHistory": [
+      {
+        "price": 100,
+        "date": "2024-01-20T10:00:00Z"
+      },
+      {
+        "price": 90,
+        "date": "2024-01-21T10:00:00Z"
+      }
+    ],
+    "url": "https://example.com/produto-alerta",
+    "currentPrice": 75,
+    "id": "1756694901940",
+    "createdAt": "2025-09-01T02:48:21.940Z",
+    "updatedAt": "2025-09-01T02:48:21.940Z"
+  },
+  {
+    "name": "Produto Alerta Teste",
+    "initialPrice": 100,
+    "targetPrice": 75,
+    "priceHistory": [
+      {
+        "price": 100,
+        "date": "2024-01-20T10:00:00Z"
+      },
+      {
+        "price": 90,
+        "date": "2024-01-21T10:00:00Z"
+      }
+    ],
+    "url": "https://example.com/produto-alerta",
+    "currentPrice": 75,
+    "id": "1756694913611",
+    "createdAt": "2025-09-01T02:48:33.611Z",
+    "updatedAt": "2025-09-01T02:48:33.611Z"
+  },
+  {
+    "name": "Produto Debug Desconto",
+    "initialPrice": 1000,
+    "selector": "auto",
+    "targetPrice": 970,
+    "priceHistory": [
+      {
+        "price": 1000,
+        "date": "2024-01-15T10:00:00Z"
+      },
+      {
+        "price": 980,
+        "date": "2024-01-16T10:00:00Z"
+      },
+      {
+        "price": 970,
+        "date": "2024-01-17T10:00:00Z"
+      }
+    ],
+    "url": "https://example.com/produto-debug",
+    "currentPrice": 959.94,
+    "id": "1756695180394",
+    "createdAt": "2025-09-01T02:53:00.394Z",
+    "updatedAt": "2025-09-01T02:53:00.394Z"
+  },
+  {
+    "name": "iPhone 15 Pro Teste Desconto",
+    "initialPrice": 9000,
+    "selector": "auto",
+    "targetPrice": 8000,
+    "priceHistory": [
+      {
+        "price": 9000,
+        "date": "2024-01-15T10:00:00Z"
+      },
+      {
+        "price": 8500,
+        "date": "2024-01-16T10:00:00Z"
+      },
+      {
+        "price": 8200,
+        "date": "2024-01-17T10:00:00Z"
+      }
+    ],
+    "url": "https://www.amazon.com.br/dp/B0CHX1W1XY",
+    "currentPrice": 7500,
+    "id": "1756695258464",
+    "createdAt": "2025-09-01T02:54:18.464Z",
+    "updatedAt": "2025-09-01T02:54:18.464Z"
+  },
+  {
+    "url": "https://www.amazon.com.br/dp/B0CHX1W1XY",
+    "priceHistory": [
+      {
+        "price": 110,
+        "timestamp": "2024-01-01T10:00:00Z"
+      },
+      {
+        "price": 105,
+        "timestamp": "2024-01-02T10:00:00Z"
+      },
+      {
+        "price": 100,
+        "timestamp": "2024-01-03T10:00:00Z"
+      }
+    ],
+    "id": 1756696014707,
+    "createdAt": "2025-09-01T00:06:54.745Z",
+    "name": "Teste Desconto Fix",
+    "isActive": true,
+    "targetPrice": 100,
+    "initialPrice": 110,
+    "currentPrice": 90
+  },
+  {
+    "url": "https://www.mercadolivre.com.br/p/MLB123456",
+    "priceHistory": [
+      {
+        "price": 100,
+        "date": "2024-01-01T10:00:00Z"
+      },
+      {
+        "price": 95,
+        "date": "2024-01-02T10:00:00Z"
+      },
+      {
+        "price": 90,
+        "date": "2024-01-03T10:00:00Z"
+      },
+      {
+        "price": 9,
+        "date": "2025-09-01T12:51:25.144Z"
+      },
+      {
+        "price": 9,
+        "date": "2025-09-01T12:57:50.850Z"
+      },
+      {
+        "price": 9,
+        "date": "2025-09-01T19:01:19.286Z"
+      }
+    ],
+    "id": 1756730857117,
+    "createdAt": "2025-09-01T09:47:37.134Z",
+    "selector": "auto",
+    "name": "Produto Teste Real",
+    "updatedAt": "2025-09-01T19:01:21.981Z",
+    "targetPrice": 95,
+    "initialPrice": 100,
+    "currentPrice": 9,
+    "lastChecked": "2025-09-01T19:01:19.286Z"
+  }
+]
