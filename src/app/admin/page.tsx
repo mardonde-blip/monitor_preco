@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
@@ -29,7 +30,8 @@ export default function AdminLogin() {
         const data = await response.json();
         setError(data.error || 'Senha incorreta');
       }
-    } catch (error) {
+    } catch (loginError) {
+      console.error('Erro no login:', loginError);
       setError('Erro de conexão');
     } finally {
       setIsLoading(false);
@@ -100,12 +102,12 @@ export default function AdminLogin() {
             </div>
 
             <div className="mt-6">
-              <a
+              <Link
                 href="/"
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 ← Voltar ao Login Normal
-              </a>
+              </Link>
             </div>
           </div>
         </div>

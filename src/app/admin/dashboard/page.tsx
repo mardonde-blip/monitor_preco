@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface User {
   nome_completo: string;
@@ -48,9 +49,9 @@ export default function AdminDashboard() {
     if (userId) {
       loadUser();
     }
-  }, [userId]);
+  }, [userId, loadStats, loadUser]);
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
       const result = await response.json();
@@ -60,9 +61,9 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
     }
-  };
+  }, [userId]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/stats');
       
@@ -78,19 +79,19 @@ export default function AdminDashboard() {
       } else {
         setError('Erro ao carregar estatísticas');
       }
-    } catch (error) {
+    } catch (statsError) {
       setError('Erro de conexão');
     } finally {
-      setLoading(false);
-    }
-  };
+        setLoading(false);
+      }
+    }, []);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/auth', { method: 'DELETE' });
       router.push('/admin');
-    } catch (error) {
-      console.error('Erro no logout:', error);
+    } catch (logoutError) {
+      console.error('Erro no logout:', logoutError);
     }
   };
 
@@ -136,12 +137,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <a
+              <Link
                 href="/"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 🏠 Site Principal
-              </a>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"

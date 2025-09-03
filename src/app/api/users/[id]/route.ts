@@ -30,7 +30,7 @@ export async function GET(
       data: user
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro ao buscar usuário:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

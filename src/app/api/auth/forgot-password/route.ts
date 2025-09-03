@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userDb } from '@/lib/database';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import crypto from 'crypto';
+import type { ResetToken } from '@/types/auth';
 
 // POST - Solicitar reset de senha
 export async function POST(request: NextRequest) {
@@ -44,11 +45,11 @@ export async function POST(request: NextRequest) {
 
     // Salvar token no usuário (simulando - em produção seria no banco de dados)
     // Como não temos campo para isso no banco atual, vamos usar uma estrutura temporária
-    if (!(global as any).resetTokens) {
-      (global as any).resetTokens = new Map();
+    if (!global.resetTokens) {
+      global.resetTokens = new Map<string, ResetToken>();
     }
     
-    (global as any).resetTokens.set(resetToken, {
+    global.resetTokens.set(resetToken, {
       userId: user.id,
       email: user.email,
       expiry: resetTokenExpiry

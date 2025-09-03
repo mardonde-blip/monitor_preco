@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { createPriceScraper } from '@/lib/scraper';
 import { getHttpScraper } from '@/lib/scraper-http';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verificar autenticação
     const cookieStore = await cookies();
@@ -153,8 +153,8 @@ export async function POST(request: NextRequest) {
         scrapingSuccess: currentPrice !== null,
         currentPrice
       }, { status: 201 });
-    } catch (dbError: any) {
-      if (dbError.message === 'Produto com esta URL já existe para este usuário') {
+    } catch (dbError: unknown) {
+      if (dbError instanceof Error && dbError.message === 'Produto com esta URL já existe para este usuário') {
         return NextResponse.json(
           { error: 'Este produto já está sendo monitorado. Verifique sua lista de produtos.' },
           { status: 409 }

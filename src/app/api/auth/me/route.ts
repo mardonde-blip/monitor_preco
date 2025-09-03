@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userDb } from '@/lib/database';
 import { cookies } from 'next/headers';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verificar se existe cookie de sessão
     const cookieStore = await cookies();
@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Retornar dados do usuário (sem senha)
-    const { senha: _, ...userWithoutPassword } = user;
+    const { senha, ...userWithoutPassword } = user;
+    // senha é removida mas não usada
     
     return NextResponse.json({
       user: userWithoutPassword

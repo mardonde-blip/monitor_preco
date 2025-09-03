@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Retornar dados do usuário (sem senha)
-    const { senha: _, ...userWithoutPassword } = user;
+    const { senha, ...userWithoutPassword } = user;
+    // senha é removida mas não usada
     
     return NextResponse.json({
       message: 'Login realizado com sucesso',
