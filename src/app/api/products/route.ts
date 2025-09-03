@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { productDb } from '@/lib/database';
 import { cookies } from 'next/headers';
+import { createPriceScraper } from '@/lib/scraper';
+import { getHttpScraper } from '@/lib/scraper-http';
 
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticação
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('user_id');
     
     if (!userIdCookie) {
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar produtos do usuário
-    const products = await productDb.getByUserId(userId);
+    const products = productDb.getByUserId(userId);
 
     return NextResponse.json({ products });
 
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticação
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('user_id');
     
     if (!userIdCookie) {
@@ -100,23 +102,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fazer scraping automático do preço atual
+    let currentPrice: number | null = null;
+    try {
+      console.log(`🔍 Fazendo scraping automático da URL: ${url}`);
+      
+      // Tentar primeiro com HTTP scraper (mais rápido)
+      const httpScraper = getHttpScraper();
+      const httpResult = await httpScraper.scrapePriceHttp(url);
+      
+      if (httpResult.success && httpResult.price && httpResult.price > 0) {
+        currentPrice = httpResult.price;
+        console.log(`✅ Preço atual capturado via HTTP: R$ ${currentPrice}`);
+      } else {
+        // Fallback para Puppeteer se HTTP falhar
+        console.log('⚠️ HTTP falhou, tentando com Puppeteer...');
+        const scraper = createPriceScraper();
+        const puppeteerResult = await scraper.scrapeProductPage(url);
+        
+        if (puppeteerResult.success && puppeteerResult.price && puppeteerResult.price > 0) {
+          currentPrice = puppeteerResult.price;
+          console.log(`✅ Preço atual capturado via Puppeteer: R$ ${currentPrice}`);
+        } else {
+          console.log('⚠️ Não foi possível capturar o preço automaticamente');
+        }
+      }
+    } catch (scrapingError) {
+      console.error('❌ Erro no scraping automático:', scrapingError);
+      // Continuar mesmo se o scraping falhar
+    }
+
     // Criar produto
-    const productId = await productDb.create({
-      user_id: userId,
-      name: name.trim(),
-      url: url.trim(),
-      target_price,
-      store: store.trim(),
-      is_active: true
-    });
+    try {
+      const newProduct = productDb.create({
+        user_id: userId,
+        name: name.trim(),
+        url: url.trim(),
+        target_price,
+        current_price: currentPrice,
+        store: store.trim()
+      });
 
-    // Buscar produto criado
-    const newProduct = await productDb.getById(productId);
+      const message = currentPrice 
+        ? `Produto adicionado com sucesso! Preço atual capturado: R$ ${currentPrice.toFixed(2)}`
+        : 'Produto adicionado com sucesso! (Preço atual não pôde ser capturado automaticamente)';
 
-    return NextResponse.json({
-      message: 'Produto adicionado com sucesso',
-      product: newProduct
-    }, { status: 201 });
+      return NextResponse.json({
+        message,
+        product: newProduct,
+        scrapingSuccess: currentPrice !== null,
+        currentPrice
+      }, { status: 201 });
+    } catch (dbError: any) {
+      if (dbError.message === 'Produto com esta URL já existe para este usuário') {
+        return NextResponse.json(
+          { error: 'Este produto já está sendo monitorado. Verifique sua lista de produtos.' },
+          { status: 409 }
+        );
+      }
+      throw dbError;
+    }
 
   } catch (error) {
     console.error('Erro ao criar produto:', error);
@@ -130,7 +175,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Verificar autenticação
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('user_id');
     
     if (!userIdCookie) {
@@ -159,7 +204,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar se o produto pertence ao usuário
-    const existingProduct = await productDb.getById(id);
+    const existingProduct = productDb.getById(id);
     if (!existingProduct || existingProduct.user_id !== userId) {
       return NextResponse.json(
         { error: 'Produto não encontrado ou não autorizado' },
@@ -177,7 +222,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // Buscar produto atualizado
-    const updatedProduct = await productDb.getById(id);
+    const updatedProduct = productDb.getById(id);
 
     return NextResponse.json({
       message: 'Produto atualizado com sucesso',
@@ -186,70 +231,6 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro ao atualizar produto:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    // Verificar autenticação
-    const cookieStore = cookies();
-    const userIdCookie = cookieStore.get('user_id');
-    
-    if (!userIdCookie) {
-      return NextResponse.json(
-        { error: 'Não autenticado' },
-        { status: 401 }
-      );
-    }
-
-    const userId = parseInt(userIdCookie.value);
-    if (isNaN(userId)) {
-      return NextResponse.json(
-        { error: 'ID de usuário inválido' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID do produto é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    const productId = parseInt(id);
-    if (isNaN(productId)) {
-      return NextResponse.json(
-        { error: 'ID do produto inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar se o produto pertence ao usuário
-    const existingProduct = await productDb.getById(productId);
-    if (!existingProduct || existingProduct.user_id !== userId) {
-      return NextResponse.json(
-        { error: 'Produto não encontrado ou não autorizado' },
-        { status: 404 }
-      );
-    }
-
-    // Deletar produto
-    await productDb.delete(productId);
-
-    return NextResponse.json({
-      message: 'Produto removido com sucesso'
-    });
-
-  } catch (error) {
-    console.error('Erro ao remover produto:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

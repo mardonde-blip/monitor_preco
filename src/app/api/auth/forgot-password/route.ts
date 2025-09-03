@@ -44,11 +44,11 @@ export async function POST(request: NextRequest) {
 
     // Salvar token no usuário (simulando - em produção seria no banco de dados)
     // Como não temos campo para isso no banco atual, vamos usar uma estrutura temporária
-    if (!global.resetTokens) {
-      global.resetTokens = new Map();
+    if (!(global as any).resetTokens) {
+      (global as any).resetTokens = new Map();
     }
     
-    global.resetTokens.set(resetToken, {
+    (global as any).resetTokens.set(resetToken, {
       userId: user.id,
       email: user.email,
       expiry: resetTokenExpiry

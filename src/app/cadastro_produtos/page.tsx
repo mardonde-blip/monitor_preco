@@ -22,9 +22,7 @@ interface Product {
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showProductForm, setShowProductForm] = useState(true); // Sempre mostrar o formulário
   const [productForm, setProductForm] = useState({
     name: '',
     url: '',
@@ -32,6 +30,18 @@ export default function Dashboard() {
     store: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    show: boolean;
+  }>({ message: '', type: 'success', show: false });
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    setNotification({ message, type, show: true });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 5000);
+  };
   const router = useRouter();
 
   useEffect(() => {
@@ -44,7 +54,6 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        loadUserProducts();
       } else {
         router.push('/');
       }
@@ -55,17 +64,7 @@ export default function Dashboard() {
     }
   };
 
-  const loadUserProducts = async () => {
-    try {
-      const response = await fetch('/api/products');
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-    }
-  };
+
 
   const handleLogout = async () => {
     try {
@@ -92,41 +91,26 @@ export default function Dashboard() {
         }),
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
-        alert('Produto adicionado com sucesso!');
+        showNotification(data.message, 'success');
         setProductForm({ name: '', url: '', target_price: '', store: '' });
-        loadUserProducts();
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'Erro ao adicionar produto');
+        if (response.status === 409) {
+          showNotification('❌ Este produto já está sendo monitorado! Verifique sua lista de produtos.', 'error');
+        } else {
+          showNotification(data.error || 'Erro ao adicionar produto', 'error');
+        }
       }
     } catch (error) {
-      alert('Erro de conexão');
+      showNotification('Erro de conexão. Tente novamente.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const deleteProduct = async (productId: number) => {
-    if (!confirm('Tem certeza que deseja remover este produto?')) {
-      return;
-    }
 
-    try {
-      const response = await fetch(`/api/products/${productId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        alert('Produto removido com sucesso!');
-        loadUserProducts();
-      } else {
-        alert('Erro ao remover produto');
-      }
-    } catch (error) {
-      alert('Erro de conexão');
-    }
-  };
 
   if (loading) {
     return (
@@ -143,10 +127,20 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4 sm:py-6">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">📦 Cadastrar Produtos</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">📦 Cadastro de Produtos</h1>
               <p className="text-sm sm:text-base text-gray-600 truncate">Adicione produtos para monitoramento de preços</p>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="text-lg text-gray-600">
+                 Olá, <span className="font-medium">{user?.nome_completo?.split(' ')[0]}</span>
+               </div>
+              <a
+                href="/produtos_monitorados"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2"
+              >
+                <span>📊</span>
+                <span>Produtos Monitorados</span>
+              </a>
                <a
                  href="/telegram-config"
                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
@@ -163,6 +157,24 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Notification */}
+      {notification.show && (
+        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full ${
+          notification.type === 'success' ? 'bg-green-500' :
+          notification.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        } text-white p-4 rounded-lg shadow-lg transform transition-all duration-300`}>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">{notification.message}</p>
+            <button
+              onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div className="py-4 sm:py-6">
@@ -272,87 +284,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Lista de Produtos */}
-          <div className="mt-8">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-4 sm:px-6 sm:py-5">
-                <div className="mb-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
-                    📊 Produtos Monitorados
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {products.length} produto(s) sendo monitorado(s)
-                  </p>
-                </div>
-                
-                {products.length === 0 ? (
-                  <div className="text-center py-12">
-                     <div className="text-6xl mb-4">📦</div>
-                     <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto cadastrado</h3>
-                     <p className="text-gray-500 text-sm mb-4">Adicione seu primeiro produto para começar o monitoramento de preços</p>
-                   </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {products.map((product) => (
-                      <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h5 className="font-medium text-gray-900 truncate">{product.name}</h5>
-                              <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${
-                                product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {product.is_active ? '✅ Ativo' : '❌ Inativo'}
-                              </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600">
-                              <div className="flex items-center space-x-1">
-                                <span>🏪</span>
-                                <span>{product.store}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <span>🎯</span>
-                                <span>Alvo: R$ {product.target_price.toFixed(2)}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <span>💰</span>
-                                <span>
-                                  Atual: {product.current_price ? `R$ ${product.current_price.toFixed(2)}` : 'Verificando...'}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="mt-2">
-                              <a 
-                                href={product.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
-                              >
-                                <span>🔗</span>
-                                <span>Ver produto</span>
-                              </a>
-                            </div>
-                          </div>
-                          
-                          <div className="flex-shrink-0 ml-4">
-                            <button
-                              onClick={() => deleteProduct(product.id)}
-                              className="text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50 transition-colors"
-                              title="Remover produto"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+
         </div>
       </main>
     </div>

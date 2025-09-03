@@ -250,8 +250,23 @@ export class ProductDatabase {
     WHERE id = ? AND user_id = ?
   `);
 
+  private checkDuplicateUrl = db.prepare('SELECT id FROM monitored_products WHERE user_id = ? AND url = ?');
+  
+  private selectAllActiveProducts = db.prepare('SELECT * FROM monitored_products WHERE is_active = 1 ORDER BY created_at DESC');
+
+  // Verificar se já existe produto com a mesma URL para o usuário
+  checkDuplicate(userId: number, url: string): boolean {
+    const existing = this.checkDuplicateUrl.get(userId, url);
+    return existing !== undefined;
+  }
+
   // Criar produto monitorado
   create(product: Omit<MonitoredProduct, 'id' | 'created_at' | 'updated_at' | 'is_active'>): MonitoredProduct {
+    // Verificar duplicata antes de inserir
+    if (this.checkDuplicate(product.user_id, product.url)) {
+      throw new Error('Produto com esta URL já existe para este usuário');
+    }
+
     const result = this.insertProduct.run(
       product.user_id,
       product.name,
@@ -260,7 +275,21 @@ export class ProductDatabase {
       product.current_price || null,
       product.store
     );
-    return this.getById(result.lastInsertRowid as number)!;
+    
+    // Retornar o produto criado com os dados fornecidos
+    const now = new Date().toISOString();
+    return {
+      id: result.lastInsertRowid as number,
+      user_id: product.user_id,
+      name: product.name,
+      url: product.url,
+      target_price: product.target_price,
+      current_price: product.current_price || null,
+      store: product.store,
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    };
   }
 
   // Buscar produtos por usuário
@@ -306,6 +335,11 @@ export class ProductDatabase {
   toggleActive(id: number, userId: number, isActive: boolean): boolean {
     const result = this.toggleProductActive.run(isActive ? 1 : 0, id, userId);
     return result.changes > 0;
+  }
+
+  // Buscar todos os produtos ativos (para o scheduler)
+  getAllActive(): MonitoredProduct[] {
+    return this.selectAllActiveProducts.all() as MonitoredProduct[];
   }
 }
 
@@ -393,9 +427,88 @@ export class TelegramConfigDatabase {
   }
 }
 
+// Classe para estatísticas administrativas
+class AdminDatabase {
+  private getUserStats = db.prepare(`
+    SELECT 
+      COUNT(*) as total_users,
+      COUNT(CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END) as users_last_7_days,
+      COUNT(CASE WHEN created_at >= datetime('now', '-30 days') THEN 1 END) as users_last_30_days
+    FROM users
+  `);
+
+  private getProductStats = db.prepare(`
+    SELECT 
+      COUNT(*) as total_products,
+      COUNT(CASE WHEN is_active = 1 THEN 1 END) as active_products,
+      COUNT(CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END) as products_last_7_days
+    FROM monitored_products
+  `);
+
+  private getUserProductCounts = db.prepare(`
+    SELECT 
+      u.id,
+      u.email,
+      u.created_at,
+      COUNT(p.id) as product_count,
+      COUNT(CASE WHEN p.is_active = 1 THEN 1 END) as active_product_count
+    FROM users u
+    LEFT JOIN monitored_products p ON u.id = p.user_id
+    GROUP BY u.id, u.email, u.created_at
+    ORDER BY product_count DESC
+  `);
+
+  private getTelegramStats = db.prepare(`
+    SELECT 
+      COUNT(*) as total_telegram_configs,
+      COUNT(CASE WHEN is_enabled = 1 THEN 1 END) as enabled_telegram_configs
+    FROM user_telegram_config
+  `);
+
+  // Obter estatísticas gerais do sistema
+  getSystemStats() {
+    const userStats = this.getUserStats.get() as any;
+    const productStats = this.getProductStats.get() as any;
+    const telegramStats = this.getTelegramStats.get() as any;
+
+    return {
+      users: userStats,
+      products: productStats,
+      telegram: telegramStats
+    };
+  }
+
+  // Obter lista de usuários com contagem de produtos
+  getUsersWithProductCounts() {
+    return this.getUserProductCounts.all();
+  }
+
+  // Obter estatísticas detalhadas por usuário
+  getUserDetailedStats(userId: number) {
+    const user = userDb.getById(userId);
+    if (!user) return null;
+
+    const products = productDb.getByUserId(userId);
+    const telegramConfig = telegramConfigDb.getByUserId(userId);
+
+    return {
+      user,
+      products,
+      telegramConfig,
+      stats: {
+        total_products: products.length,
+        active_products: products.filter(p => p.is_active).length,
+        has_telegram: !!telegramConfig,
+        telegram_enabled: telegramConfig?.is_enabled || false
+      }
+    };
+  }
+}
+
 // Instâncias singleton
 export const userDb = new UserDatabase();
 export const productDb = new ProductDatabase();
 export const telegramConfigDb = new TelegramConfigDatabase();
+export const adminDb = new AdminDatabase();
 
 export default db;

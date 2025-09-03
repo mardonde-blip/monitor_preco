@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { priceMonitorScheduler } from '@/lib/scheduler';
-import { getProductsForAPI } from '../../products/route';
+import { productDb } from '@/lib/database';
 import { getSettings, areNotificationsEnabled } from '../../settings/route';
 
 export async function GET() {
   try {
     const isRunning = priceMonitorScheduler.isSchedulerRunning();
-    const products = getProductsForAPI();
+    const products = productDb.getAllActive();
     const settings = getSettings();
     const notificationsEnabled = areNotificationsEnabled();
     

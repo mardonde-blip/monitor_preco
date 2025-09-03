@@ -155,7 +155,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         setMessage('Login realizado com sucesso!');
         setTimeout(() => {
           onAuthSuccess();
-          router.push('/dashboard');
+          router.push('/cadastro_produtos');
         }, 1000);
       } else {
         setError(data.error || 'Erro no login');

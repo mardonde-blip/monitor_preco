@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 // Rotas que requerem autenticação
 const protectedRoutes = [
-  '/dashboard',
+  '/cadastro_produtos',
   '/api/products',
   '/api/users/telegram'
 ];
@@ -17,9 +17,35 @@ const authRoutes = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userIdCookie = request.cookies.get('user_id');
+  const adminAuthCookie = request.cookies.get('admin_auth');
   const isAuthenticated = !!userIdCookie;
+  const isAdminAuthenticated = adminAuthCookie?.value === 'true';
 
-  // Verificar se é uma rota protegida
+  // Verificar se é uma rota administrativa
+  if (pathname.startsWith('/admin')) {
+    // Permitir acesso à página de login administrativa
+    if (pathname === '/admin') {
+      return NextResponse.next();
+    }
+
+    // Verificar autenticação administrativa para outras rotas admin
+    if (!isAdminAuthenticated) {
+      // Para rotas de API admin, retornar 403
+      if (pathname.startsWith('/api/admin/')) {
+        return NextResponse.json(
+          { error: 'Acesso negado. Apenas administradores podem acessar esta área.' },
+          { status: 403 }
+        );
+      }
+      
+      // Para páginas admin, redirecionar para login admin
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // Verificar se é uma rota protegida (usuários normais)
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname.startsWith(route)
   );
@@ -45,7 +71,7 @@ export function middleware(request: NextRequest) {
 
   // Se é uma rota de autenticação e o usuário já está logado
   if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/cadastro_produtos', request.url));
   }
 
   return NextResponse.next();

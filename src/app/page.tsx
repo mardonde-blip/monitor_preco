@@ -17,7 +17,7 @@ export default function Home() {
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         // Usuário já está logado, redirecionar para dashboard
-        router.push('/dashboard');
+        router.push('/cadastro_produtos');
       } else {
         // Usuário não está logado, mostrar formulário de login
         setLoading(false);

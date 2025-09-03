@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 export async function GET(request: NextRequest) {
   try {
     // Verificar se existe cookie de sessão
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
 
     if (!userId) {

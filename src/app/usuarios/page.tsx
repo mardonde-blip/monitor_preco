@@ -4,11 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/database';
 
+interface CurrentUser {
+  nome_completo: string;
+  email: string;
+  telegram_id?: string;
+}
+
 export default function ListaUsuarios() {
   const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const router = useRouter();
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
   // Carregar usuários
   const loadUsers = async () => {
@@ -75,7 +83,23 @@ export default function ListaUsuarios() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+    if (userId) {
+      loadCurrentUser();
+    }
+  }, [userId]);
+
+  // Carregar usuário logado
+  const loadCurrentUser = async () => {
+    try {
+      const response = await fetch(`/api/users/${userId}`);
+      const result = await response.json();
+      if (result.success) {
+        setCurrentUser(result.data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar usuário logado:', error);
+    }
+  };
 
   // Auto-hide message after 5 seconds
   useEffect(() => {
@@ -103,11 +127,16 @@ export default function ListaUsuarios() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Usuários Cadastrados</h1>
-            <p className="text-gray-600">
-              {users.length === 0 ? 'Nenhum usuário cadastrado' : `${users.length} usuário(s) encontrado(s)`}
-            </p>
+          <div className="flex items-center space-x-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Usuários Cadastrados</h1>
+              <p className="text-gray-600">
+                {users.length === 0 ? 'Nenhum usuário cadastrado' : `${users.length} usuário(s) encontrado(s)`}
+              </p>
+            </div>
+            <div className="text-lg text-gray-700">
+              {isLoading ? 'Carregando...' : `Olá, ${currentUser?.nome_completo?.split(' ')[0] || 'Usuário'}! 👋`}
+            </div>
           </div>
           <button
             onClick={() => router.push('/usuarios/cadastro')}

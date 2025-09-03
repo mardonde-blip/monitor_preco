@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 export async function PUT(request: NextRequest) {
   try {
     // Verificar autenticação
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('user_id');
     
     if (!userIdCookie) {
@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar se o usuário existe
-    const user = await userDb.getById(userId);
+    const user = userDb.getById(userId);
     if (!user) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest) {
     await userDb.updateTelegramId(userId, telegram_id.trim());
 
     // Buscar usuário atualizado
-    const updatedUser = await userDb.getById(userId);
+    const updatedUser = userDb.getById(userId);
     if (!updatedUser) {
       return NextResponse.json(
         { error: 'Erro ao buscar usuário atualizado' },

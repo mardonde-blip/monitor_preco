@@ -24,18 +24,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o token existe e é válido
-    if (!global.resetTokens || !global.resetTokens.has(token)) {
+    if (!(global as any).resetTokens || !(global as any).resetTokens.has(token)) {
       return NextResponse.json(
         { success: false, error: 'Token inválido ou expirado' },
         { status: 400 }
       );
     }
 
-    const tokenData = global.resetTokens.get(token);
+    const tokenData = (global as any).resetTokens.get(token);
     
     // Verificar se o token não expirou
     if (new Date() > tokenData.expiry) {
-      global.resetTokens.delete(token);
+      (global as any).resetTokens.delete(token);
       return NextResponse.json(
         { success: false, error: 'Token expirado. Solicite um novo reset de senha.' },
         { status: 400 }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const user = users.find(u => u.id === tokenData.userId);
 
     if (!user) {
-      global.resetTokens.delete(token);
+      (global as any).resetTokens.delete(token);
       return NextResponse.json(
         { success: false, error: 'Usuário não encontrado' },
         { status: 404 }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       userDb.update(user.id, { senha: newPassword });
       
       // Remover token usado
-      global.resetTokens.delete(token);
+      (global as any).resetTokens.delete(token);
       
       console.log(`Senha redefinida com sucesso para usuário: ${user.email}`);
       
@@ -99,18 +99,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar se o token existe e é válido
-    if (!global.resetTokens || !global.resetTokens.has(token)) {
+    if (!(global as any).resetTokens || !(global as any).resetTokens.has(token)) {
       return NextResponse.json(
         { success: false, error: 'Token inválido' },
         { status: 400 }
       );
     }
 
-    const tokenData = global.resetTokens.get(token);
+    const tokenData = (global as any).resetTokens.get(token);
     
     // Verificar se o token não expirou
     if (new Date() > tokenData.expiry) {
-      global.resetTokens.delete(token);
+      (global as any).resetTokens.delete(token);
       return NextResponse.json(
         { success: false, error: 'Token expirado' },
         { status: 400 }

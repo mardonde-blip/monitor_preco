@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar sessão (cookie)
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set('user_id', user.id!.toString(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -11,6 +11,12 @@ export class TelegramNotifier {
     this.bot = new TelegramBot(config.botToken, { polling: false });
   }
 
+  // Método alternativo para inicialização (compatibilidade)
+  async initialize(botToken: string, chatId: string): Promise<void> {
+    this.config = { botToken, chatId };
+    this.bot = new TelegramBot(botToken, { polling: false });
+  }
+
   async sendPriceAlert(product: Product, oldPrice: number, newPrice: number): Promise<void> {
     if (!this.bot || !this.config) {
       throw new Error('Telegram not initialized');

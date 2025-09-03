@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { priceMonitorScheduler } from '@/lib/scheduler';
-import { getProductsForAPI } from '../../products/route';
+import { productDb } from '@/lib/database';
 import { areNotificationsEnabled } from '../../settings/route';
 
 export async function POST() {
   try {
-    const products = getProductsForAPI();
+    const products = productDb.getAllActive();
     const notificationsEnabled = areNotificationsEnabled();
     
     if (products.length === 0) {

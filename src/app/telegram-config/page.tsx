@@ -1,13 +1,97 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import UserTelegramConfig from '@/components/UserTelegramConfig';
+
+interface User {
+  id: number;
+  nome_completo: string;
+  email: string;
+  telegram_id?: string;
+}
 
 export default function TelegramConfigPage() {
   // Usar ID fixo do usuário (em produção, seria obtido da sessão)
   const userId = 1;
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setUser(result.data);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [userId]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/');
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
+  };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4 sm:py-6">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">📱 Configuração do Telegram</h1>
+                <p className="text-lg text-gray-700">
+                  {loading ? (
+                    'Carregando...'
+                  ) : (
+                    `Olá, ${user?.nome_completo?.split(' ')[0] || 'Usuário'}! 👋`
+                  )}
+                </p>
+              </div>
+              <p className="text-sm sm:text-base text-gray-600 truncate">Configure suas notificações personalizadas</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <a
+                 href="/cadastro_produtos"
+                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
+               >
+                 📦 Cadastro de Produtos
+               </a>
+              <a
+                 href="/produtos_monitorados"
+                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
+               >
+                 📊 Produtos Monitorados
+               </a>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>📱 Configuração Personalizada do Telegram</h1>
         <p style={{ fontSize: '1.1rem', color: '#666', maxWidth: '600px', margin: '0 auto' }}>
@@ -122,6 +206,8 @@ export default function TelegramConfigPage() {
           </div>
         </div>
       </div>
+        </div>
+      </main>
     </div>
   );
 }

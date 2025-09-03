@@ -3,7 +3,7 @@ import { PriceScraper } from './scraper';
 import { TelegramNotifier } from './telegram';
 import { LocalStorage } from './storage';
 import { Product, NotificationSettings } from '../types';
-import { getProductsForAPI } from '@/app/api/products/route';
+import { productDb, MonitoredProduct } from './database';
 import { sendEmail, emailTemplates } from './email';
 
 export class PriceMonitorScheduler {
@@ -74,7 +74,7 @@ export class PriceMonitorScheduler {
       this.lastRun = new Date().toISOString();
       console.log('Iniciando ciclo de monitoramento...', this.lastRun);
       
-      const products = getProductsForAPI();
+      const products = productDb.getAllActive();
       const notificationSettings = await this.getNotificationSettings();
       
       if (!products.length) {
@@ -109,20 +109,18 @@ export class PriceMonitorScheduler {
    * Verifica o preço de um produto específico
    */
   private async checkProductPrice(
-    product: Product
+    product: MonitoredProduct
   ): Promise<void> {
     try {
-      // Use automatic detection if selector is 'auto', otherwise use specific selector
-      const scrapingResult = product.selector === 'auto'
-        ? await this.scraper.scrapePriceAuto(product.url)
-        : await this.scraper.scrapePrice(product.url, product.selector);
+      // Use automatic detection for MonitoredProduct
+      const scrapingResult = await this.scraper.scrapePriceAuto(product.url);
       
       if (!scrapingResult.success || scrapingResult.price === null) {
         console.error(`Falha ao obter preço para ${product.name}:`, scrapingResult.error);
         
         // Mesmo com falha no scraping, verifica se o produto já está com preço abaixo do alvo
-        const targetPrice = product.targetPrice || product.initialPrice;
-        const currentPrice = product.currentPrice;
+        const targetPrice = product.target_price;
+        const currentPrice = product.current_price;
         
         if (currentPrice !== null && currentPrice !== undefined && currentPrice <= targetPrice) {
           console.log(`🎯 PRODUTO JÁ COM PREÇO BAIXO: ${product.name} - R$ ${currentPrice.toFixed(2)} <= R$ ${targetPrice.toFixed(2)}`);
@@ -133,33 +131,24 @@ export class PriceMonitorScheduler {
       }
       
       const newPrice = scrapingResult.price;
-      const previousPrice = product.currentPrice || product.initialPrice;
+      const previousPrice = product.current_price;
       
-      // Atualiza o preço atual do produto
-      const updatedProduct: Product = {
+      // Atualiza o preço atual do produto no banco de dados
+      await this.updateProductViaAPI({
         ...product,
-        currentPrice: newPrice,
-        lastChecked: new Date().toISOString(),
-        priceHistory: [
-          ...(product.priceHistory || []),
-          {
-              price: newPrice || 0,
-              date: new Date().toISOString()
-            }
-        ].slice(-50) // Mantém apenas os últimos 50 registros
-      };
+        current_price: newPrice,
+        updated_at: new Date().toISOString()
+      });
       
-      await this.updateProductViaAPI(updatedProduct);
-      
-      // Verifica se houve queda de preço abaixo do valor alvo (ou inicial se não definido)
-      const targetPrice = product.targetPrice || product.initialPrice;
-      const priceDropped = newPrice !== null && newPrice !== undefined && newPrice <= targetPrice;
+      // Verifica se o preço atual está abaixo do preço alvo (envia notificação quando preço alvo > preço atual)
+      const targetPrice = product.target_price;
+      const priceDropped = newPrice !== null && newPrice !== undefined && targetPrice !== null && targetPrice !== undefined && targetPrice > newPrice;
       
       if (priceDropped) {
-        await this.sendPriceAlert(updatedProduct);
+        await this.sendPriceAlert(product);
       }
       
-      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (alvo: R$ ${targetPrice.toFixed(2)}, anterior: R$ ${previousPrice.toFixed(2)})`);
+      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (alvo: R$ ${targetPrice?.toFixed(2) || 'N/A'}, anterior: R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'})`);
       
       if (priceDropped) {
         console.log(`🎯 ALERTA: Preço de ${product.name} baixou para R$ ${newPrice?.toFixed(2) || 'N/A'}!`);
@@ -173,7 +162,7 @@ export class PriceMonitorScheduler {
   /**
    * Envia alerta de preço via Telegram e Email
    */
-  private async sendPriceAlert(product: Product): Promise<void> {
+  private async sendPriceAlert(product: MonitoredProduct): Promise<void> {
     try {
       const notificationSettings = await this.getNotificationSettings();
       
@@ -182,19 +171,17 @@ export class PriceMonitorScheduler {
       }
       
       // Usa o preço anterior para calcular o desconto corretamente
-      let previousPrice = product.priceHistory && product.priceHistory.length > 1 
-        ? product.priceHistory[product.priceHistory.length - 2].price
-        : product.initialPrice;
+      let previousPrice = product.current_price;
+      
+      // Se não há preço anterior, usa o preço alvo como referência
+      if (!previousPrice) {
+        previousPrice = product.target_price;
+      }
       
       // Evita desconto 0.0% quando preços são iguais
-      if (previousPrice === product.currentPrice) {
-        // Tenta usar o preço inicial se for diferente
-        if (product.initialPrice !== product.currentPrice) {
-          previousPrice = product.initialPrice;
-        } else {
-          // Se todos os preços são iguais, usa um valor ligeiramente maior para mostrar "economia"
-          previousPrice = product.currentPrice! * 1.01; // 1% maior
-        }
+      if (previousPrice === product.current_price) {
+        // Se todos os preços são iguais, usa um valor ligeiramente maior para mostrar "economia"
+        previousPrice = product.current_price! * 1.01; // 1% maior
       }
       
       // Enviar notificação via Telegram
@@ -207,7 +194,7 @@ export class PriceMonitorScheduler {
         await this.telegramNotifier.sendPriceAlert(
           product,
           previousPrice,
-          product.currentPrice!
+          product.current_price!
         );
         
         console.log(`Alerta Telegram enviado para ${product.name}`);
@@ -217,13 +204,13 @@ export class PriceMonitorScheduler {
       
       // Enviar notificação via Email
       try {
-        await this.sendEmailAlert(product, previousPrice, product.currentPrice!);
+        await this.sendEmailAlert(product, previousPrice, product.current_price!);
         console.log(`Alerta Email enviado para ${product.name}`);
       } catch (emailError) {
         console.error('Erro ao enviar alerta via Email:', emailError);
       }
       
-      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice.toFixed(2)} -> R$ ${product.currentPrice!.toFixed(2)})`);
+      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'} -> R$ ${product.current_price!.toFixed(2)})`);
       
     } catch (error) {
       console.error('Erro ao enviar alerta:', error);
@@ -233,7 +220,7 @@ export class PriceMonitorScheduler {
   /**
    * Envia alerta de preço por email
    */
-  private async sendEmailAlert(product: Product, oldPrice: number, newPrice: number): Promise<void> {
+  private async sendEmailAlert(product: MonitoredProduct, oldPrice: number, newPrice: number): Promise<void> {
     try {
       // Buscar usuários que monitoram este produto
       const users = await this.getUsersForProduct(product.id);
@@ -306,24 +293,21 @@ export class PriceMonitorScheduler {
   }
 
   /**
-   * Atualiza produto via API
+   * Atualiza um produto diretamente no banco de dados
    */
   private async updateProductViaAPI(product: Product): Promise<void> {
     try {
-      const response = await fetch(`http://localhost:3000/api/products`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(product),
+      // Usar diretamente o banco de dados em vez da API para evitar problemas de autenticação
+      productDb.update(product.id, product.userId, {
+        name: product.name,
+        url: product.url,
+        target_price: product.targetPrice,
+        current_price: product.currentPrice,
+        store: product.store
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status}`);
-      }
     } catch (error) {
-      console.error('Erro ao atualizar produto via API:', error);
-      // Fallback para localStorage se API falhar
+      console.error('Erro ao atualizar produto no banco:', error);
+      // Fallback para localStorage se banco falhar
       LocalStorage.updateProduct(product.id, product);
     }
   }

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 export async function POST(request: NextRequest) {
   try {
     // Remover cookie de sessão
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set('user_id', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
