@@ -44,13 +44,6 @@ export default function AdminDashboard() {
   const router = useRouter();
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
-  useEffect(() => {
-    loadStats();
-    if (userId) {
-      loadUser();
-    }
-  }, [userId, loadStats, loadUser]);
-
   const loadUser = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
@@ -85,6 +78,13 @@ export default function AdminDashboard() {
         setLoading(false);
       }
     }, []);
+
+  useEffect(() => {
+    loadStats();
+    if (userId) {
+      loadUser();
+    }
+  }, [userId, loadStats, loadUser]);
 
   const handleLogout = async () => {
     try {
