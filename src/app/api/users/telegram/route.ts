@@ -43,11 +43,25 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Atualizar telegram_id
-    await userDb.updateTelegramId(userId, telegram_id.trim());
+    // Buscar usuário existente
+    const existingUser = userDb.getById(userId);
+    if (!existingUser) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado' },
+        { status: 404 }
+      );
+    }
 
-    // Buscar usuário atualizado
-    const updatedUser = userDb.getById(userId);
+    // Atualizar telegram_id
+    const updatedUser = userDb.update(userId, {
+      nome_completo: existingUser.nome_completo,
+      email: existingUser.email,
+      senha: existingUser.senha,
+      data_nascimento: existingUser.data_nascimento,
+      sexo: existingUser.sexo,
+      celular: existingUser.celular,
+      telegram_id: telegram_id.trim()
+    });
     if (!updatedUser) {
       return NextResponse.json(
         { error: 'Erro ao buscar usuário atualizado' },

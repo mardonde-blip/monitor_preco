@@ -14,6 +14,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading = false }
   const [formData, setFormData] = useState({
     nome_completo: user?.nome_completo || '',
     email: user?.email || '',
+    senha: user?.senha || '',
     data_nascimento: user?.data_nascimento || '',
     sexo: user?.sexo || '',
     celular: user?.celular || ''

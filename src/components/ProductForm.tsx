@@ -71,6 +71,7 @@ export default function ProductForm({ onAddProduct }: ProductFormProps) {
         name: formData.name,
         url: formData.url,
         targetPrice: parseFloat(formData.targetPrice),
+        initialPrice: 0, // Será definido após o primeiro scraping
         selector: 'auto', // Indica detecção automática
         addedAt: new Date().toISOString()
       };

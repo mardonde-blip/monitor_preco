@@ -66,10 +66,7 @@ export default function ProductList({ products, onRemoveProduct, onMonitorProduc
     return Math.round(((currentPrice - targetPrice) / currentPrice) * 100);
   };
 
-  const calculateSavings = (currentPrice: number | undefined, targetPrice: number) => {
-    if (!currentPrice || currentPrice <= targetPrice) return 0;
-    return currentPrice - targetPrice;
-  };
+
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">

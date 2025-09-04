@@ -33,7 +33,7 @@ export async function sendEmail({ to, subject, html, text }: EmailData) {
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Erro ao enviar email:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

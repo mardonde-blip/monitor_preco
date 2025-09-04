@@ -49,6 +49,13 @@ export async function POST(request: NextRequest) {
       global.resetTokens = new Map<string, ResetToken>();
     }
     
+    if (!user.id) {
+      return NextResponse.json(
+        { error: 'Erro interno: ID do usuário não encontrado' },
+        { status: 500 }
+      );
+    }
+
     global.resetTokens.set(resetToken, {
       userId: user.id,
       email: user.email,

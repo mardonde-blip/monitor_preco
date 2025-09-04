@@ -15,14 +15,12 @@ interface AdvancedFiltersProps {
   onFiltersChange: (filters: FilterOptions) => void;
   availableBrands?: string[];
   availableStores?: string[];
-  availableCategories?: string[];
 }
 
 export default function AdvancedFilters({ 
   onFiltersChange, 
   availableBrands = [], 
-  availableStores = [], 
-  availableCategories = [] 
+  availableStores = [] 
 }: AdvancedFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -54,12 +52,12 @@ export default function AdvancedFilters({
     handleFilterChange({ stores: newStores });
   };
 
-  const handleCategoryToggle = (category: string) => {
-    const newCategories = filters.categories.includes(category)
-      ? filters.categories.filter(c => c !== category)
-      : [...filters.categories, category];
-    handleFilterChange({ categories: newCategories });
-  };
+  // const handleCategoryToggle = (category: string) => {
+  //   const newCategories = filters.categories.includes(category)
+  //     ? filters.categories.filter(c => c !== category)
+  //     : [...filters.categories, category];
+  //   handleFilterChange({ categories: newCategories });
+  // };
 
   const clearAllFilters = () => {
     const clearedFilters = {

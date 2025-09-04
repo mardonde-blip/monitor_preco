@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { userDb } from '@/lib/database';
 
 // POST - Redefinir senha com token
 export async function POST(request: NextRequest) {
@@ -32,6 +33,13 @@ export async function POST(request: NextRequest) {
 
     const tokenData = global.resetTokens.get(token);
     
+    if (!tokenData) {
+      return NextResponse.json(
+        { success: false, error: 'Token inválido.' },
+        { status: 400 }
+      );
+    }
+    
     // Verificar se o token não expirou
     if (new Date() > tokenData.expiry) {
       global.resetTokens.delete(token);
@@ -54,8 +62,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Atualizar senha do usuário
+    if (!user.id) {
+      return NextResponse.json(
+        { success: false, error: 'ID do usuário inválido.' },
+        { status: 500 }
+      );
+    }
+    
     try {
-      userDb.update(user.id, { senha: newPassword });
+      userDb.update(user.id, {
+        nome_completo: user.nome_completo,
+        email: user.email,
+        senha: newPassword,
+        data_nascimento: user.data_nascimento,
+        sexo: user.sexo,
+        celular: user.celular,
+        telegram_id: user.telegram_id
+      });
       
       // Remover token usado
       global.resetTokens.delete(token);
@@ -106,6 +129,13 @@ export async function GET(request: NextRequest) {
     }
 
     const tokenData = global.resetTokens.get(token);
+    
+    if (!tokenData) {
+      return NextResponse.json(
+        { success: false, error: 'Token inválido.' },
+        { status: 400 }
+      );
+    }
     
     // Verificar se o token não expirou
     if (new Date() > tokenData.expiry) {

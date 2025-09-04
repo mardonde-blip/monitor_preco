@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TELEGRAM_TEMPLATES, getTemplatesByCategory, validateTemplate } from '@/lib/telegram-templates';
+import { TELEGRAM_TEMPLATES, validateTemplate } from '@/lib/telegram-templates';
 
 interface UserTelegramConfigProps {
   userId: number;
@@ -20,11 +20,6 @@ interface TelegramConfig {
   };
 }
 
-interface TestResult {
-  success: boolean;
-  message: string;
-}
-
 export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) {
   const [config, setConfig] = useState<TelegramConfig>({
     user_id: userId,
@@ -40,9 +35,8 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
   });
 
   const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [saveResult, setSaveResult] = useState<TestResult | null>(null);
+
+
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [templateValidation, setTemplateValidation] = useState<{valid: boolean; errors: string[]} | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,10 +44,6 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
   const [message, setMessage] = useState<{type: 'success' | 'error'; text: string} | null>(null);
 
   // Carregar configuração existente
-  useEffect(() => {
-    loadConfig();
-  }, [userId]);
-
   const loadConfig = async () => {
     try {
       setLoading(true);
@@ -75,6 +65,10 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadConfig();
+  }, [userId]);
 
   const handleSave = async () => {
     try {
@@ -105,7 +99,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
       } else {
         setMessage({ type: 'error', text: data.error });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Erro ao salvar configuração' });
     } finally {
       setIsSaving(false);
@@ -131,7 +125,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
 
       const data = await response.json();
       setMessage({ type: response.ok ? 'success' : 'error', text: data.message || data.error });
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Erro ao testar configuração' });
     } finally {
       setIsTesting(false);
@@ -147,17 +141,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
     validateCurrentTemplate();
   };
 
-  const applyTemplate = (templateId: string) => {
-    const template = TELEGRAM_TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      setConfig(prev => ({
-        ...prev,
-        message_template: template.template
-      }));
-      setSelectedTemplate(templateId);
-      validateCurrentTemplate(template.template);
-    }
-  };
+
 
   const validateCurrentTemplate = (template?: string) => {
     const templateToValidate = template || config.message_template;

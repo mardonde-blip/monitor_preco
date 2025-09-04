@@ -19,7 +19,6 @@ export async function GET() {
       lastRun: priceMonitorScheduler.getLastRun() || null,
       lastCheck: priceMonitorScheduler.getLastRun() || null,
       settings: {
-        monitoringInterval: settings.monitoringInterval,
         telegramConfigured: !!(settings.telegram.botToken && 
                               settings.telegram.chatId && 
                               settings.telegram.chatId !== 'your_chat_id_here')

@@ -17,7 +17,7 @@ interface ProductSearchProps {
   onAddToMonitor?: (url: string, title: string, price: number) => void;
 }
 
-export default function ProductSearch({ onAddToMonitor }: ProductSearchProps) {
+export default function ProductSearch({ }: ProductSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

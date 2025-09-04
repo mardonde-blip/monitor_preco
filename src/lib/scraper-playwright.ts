@@ -244,7 +244,7 @@ export class PlaywrightPriceScraper {
             }
           }
         }
-      } catch (_) {
+      } catch {
         // Continuar tentando outros seletores
       }
     }

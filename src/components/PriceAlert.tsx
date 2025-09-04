@@ -74,7 +74,7 @@ export default function PriceAlert({ productTitle, currentPrice, productUrl, onC
         setSuccess(false);
         setIsOpen(false);
       }, 2000);
-    } catch (error) {
+    } catch {
       alert('Erro ao criar alerta. Tente novamente.');
     } finally {
       setIsSubmitting(false);

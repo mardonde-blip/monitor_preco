@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { productDb } from '@/lib/database';
 import { cookies } from 'next/headers';
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Verificar autenticação
     const cookieStore = await cookies();
@@ -23,7 +23,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
 
-    const productId = parseInt(params.id);
+    const resolvedParams = await params;
+    const productId = parseInt(resolvedParams.id);
     if (isNaN(productId)) {
       return NextResponse.json(
         { error: 'ID do produto inválido' },

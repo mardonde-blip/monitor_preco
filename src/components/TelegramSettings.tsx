@@ -66,7 +66,7 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
       } else {
         setValidationResult({ success: false, message: data.error || 'Configurações inválidas.' });
       }
-    } catch (error) {
+    } catch {
       setValidationResult({ success: false, message: 'Erro de conexão. Verifique sua internet.' });
     } finally {
       setIsValidating(false);
@@ -101,7 +101,7 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
       } else {
         setTestResult({ success: false, message: data.error || 'Erro ao testar conexão.' });
       }
-    } catch (error) {
+    } catch {
       setTestResult({ success: false, message: 'Erro de conexão. Verifique sua internet.' });
     } finally {
       setIsTestingConnection(false);
@@ -119,7 +119,7 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
       await handleTestConnection();
       
       setTestResult({ success: true, message: 'Bot ativado automaticamente! Sistema configurado e testado.' });
-    } catch (error) {
+    } catch {
       setTestResult({ success: false, message: 'Erro na ativação automática.' });
     } finally {
       setIsTestingConnection(false);
@@ -259,8 +259,8 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
             <li>3. Copie o token fornecido pelo BotFather</li>
             <li>4. Procure por @userinfobot e envie /start para obter seu chat ID</li>
             <li>5. Cole o token e chat ID nos campos acima</li>
-            <li>6. Use "Validar Configuração" para verificar as credenciais</li>
-            <li>7. Use "🚀 Ativar Bot" para configuração automática completa</li>
+            <li>6. Use &quot;Validar Configuração&quot; para verificar as credenciais</li>
+            <li>7. Use &quot;🚀 Ativar Bot&quot; para configuração automática completa</li>
           </ol>
         </div>
 

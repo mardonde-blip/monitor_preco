@@ -23,7 +23,7 @@ interface DiscountCouponsProps {
   store?: string;
 }
 
-export default function DiscountCoupons({ productTitle, store }: DiscountCouponsProps) {
+export default function DiscountCoupons({ }: DiscountCouponsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -103,7 +103,7 @@ export default function DiscountCoupons({ productTitle, store }: DiscountCoupons
       await navigator.clipboard.writeText(code);
       setCopiedCoupon(code);
       setTimeout(() => setCopiedCoupon(null), 2000);
-    } catch (err) {
+    } catch {
       // Fallback para navegadores que não suportam clipboard API
       const textArea = document.createElement('textarea');
       textArea.value = code;

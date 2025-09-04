@@ -9,8 +9,7 @@ let settings: NotificationSettings = {
   telegram: {
     botToken: process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || '',
     chatId: process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || ''
-  },
-  monitoringInterval: parseInt(process.env.NEXT_PUBLIC_MONITORING_INTERVAL || '30')
+  }
 };
 
 export async function GET() {
@@ -52,8 +51,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Configurações atualizadas:', {
       enabled: settings.enabled,
-      telegramConfigured: !!(settings.telegram.botToken && settings.telegram.chatId),
-      monitoringInterval: settings.monitoringInterval
+      telegramConfigured: !!(settings.telegram.botToken && settings.telegram.chatId)
     });
     
     return NextResponse.json(settings);

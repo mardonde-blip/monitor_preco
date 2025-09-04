@@ -20,7 +20,7 @@ export async function GET() {
        }
     } catch (error) {
       console.error('❌ Erro no template de boas-vindas:', error);
-      results.push({ test: 'welcome', status: 'error', message: error.message });
+      results.push({ test: 'welcome', status: 'error', message: error instanceof Error ? error.message : String(error) });
     }
     
     // Teste 2: Template de reset de senha
@@ -36,7 +36,7 @@ export async function GET() {
        }
     } catch (error) {
       console.error('❌ Erro no template de reset:', error);
-      results.push({ test: 'reset', status: 'error', message: error.message });
+      results.push({ test: 'reset', status: 'error', message: error instanceof Error ? error.message : String(error) });
     }
     
     // Teste 3: Template de alerta de preço
@@ -58,7 +58,7 @@ export async function GET() {
        }
     } catch (error) {
       console.error('❌ Erro no template de alerta:', error);
-      results.push({ test: 'priceAlert', status: 'error', message: error.message });
+      results.push({ test: 'priceAlert', status: 'error', message: error instanceof Error ? error.message : String(error) });
     }
     
     // Teste 4: Verificação das variáveis de ambiente
@@ -115,7 +115,7 @@ export async function GET() {
     
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       message: 'Erro durante a execução dos testes'
     }, { status: 500 });
   }

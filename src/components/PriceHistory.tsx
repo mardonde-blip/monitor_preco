@@ -21,68 +21,69 @@ export default function PriceHistory({ productTitle, currentPrice, productUrl }:
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Gerar dados simulados de histórico de preços
-  const generatePriceHistory = (range: '40d' | '3m' | '6m' | '1y') => {
-    const now = new Date();
-    const points: PricePoint[] = [];
-    const stores = ['Amazon', 'Mercado Livre', 'Americanas', 'Casas Bahia', 'Magazine Luiza'];
-    
-    let days: number;
-    let interval: number;
-    
-    switch (range) {
-      case '40d':
-        days = 40;
-        interval = 2;
-        break;
-      case '3m':
-        days = 90;
-        interval = 3;
-        break;
-      case '6m':
-        days = 180;
-        interval = 7;
-        break;
-      case '1y':
-        days = 365;
-        interval = 14;
-        break;
-    }
-    
-    // Gerar pontos de preço com variação realística
-    const basePrice = currentPrice;
-    let currentPricePoint = basePrice * (0.8 + Math.random() * 0.4); // Variação inicial
-    
-    for (let i = days; i >= 0; i -= interval) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      // Variação de preço mais realística
-      const variation = (Math.random() - 0.5) * 0.2; // ±10%
-      currentPricePoint = Math.max(basePrice * 0.6, currentPricePoint * (1 + variation));
-      
-      const store = stores[Math.floor(Math.random() * stores.length)];
-      
-      points.push({
-        date: date.toISOString().split('T')[0],
-        price: Math.round(currentPricePoint * 100) / 100,
-        store
-      });
-    }
-    
-    // Adicionar preço atual
-    points.push({
-      date: now.toISOString().split('T')[0],
-      price: currentPrice,
-      store: 'Atual'
-    });
-    
-    return points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
-
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
+      
+      // Gerar dados simulados de histórico de preços
+      const generatePriceHistory = (range: '40d' | '3m' | '6m' | '1y') => {
+        const now = new Date();
+        const points: PricePoint[] = [];
+        const stores = ['Amazon', 'Mercado Livre', 'Americanas', 'Casas Bahia', 'Magazine Luiza'];
+        
+        let days: number;
+        let interval: number;
+        
+        switch (range) {
+          case '40d':
+            days = 40;
+            interval = 2;
+            break;
+          case '3m':
+            days = 90;
+            interval = 3;
+            break;
+          case '6m':
+            days = 180;
+            interval = 7;
+            break;
+          case '1y':
+            days = 365;
+            interval = 14;
+            break;
+        }
+        
+        // Gerar pontos de preço com variação realística
+        const basePrice = currentPrice;
+        let currentPricePoint = basePrice * (0.8 + Math.random() * 0.4); // Variação inicial
+        
+        for (let i = days; i >= 0; i -= interval) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          
+          // Variação de preço mais realística
+          const variation = (Math.random() - 0.5) * 0.2; // ±10%
+          currentPricePoint = Math.max(basePrice * 0.6, currentPricePoint * (1 + variation));
+          
+          const store = stores[Math.floor(Math.random() * stores.length)];
+          
+          points.push({
+            date: date.toISOString().split('T')[0],
+            price: Math.round(currentPricePoint * 100) / 100,
+            store
+          });
+        }
+        
+        // Adicionar preço atual
+        points.push({
+          date: now.toISOString().split('T')[0],
+          price: currentPrice,
+          store: 'Atual'
+        });
+        
+        return points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      };
+      
       // Simular carregamento
       setTimeout(() => {
         setPriceHistory(generatePriceHistory(timeRange));

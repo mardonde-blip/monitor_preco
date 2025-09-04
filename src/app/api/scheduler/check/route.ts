@@ -34,7 +34,7 @@ export async function POST() {
       message: 'Verificação manual executada com sucesso',
       productsChecked: products.length,
       timestamp: new Date().toISOString(),
-      result: result || 'Verificação concluída'
+      result: 'Verificação concluída'
     });
     
   } catch (error) {
@@ -52,7 +52,7 @@ export async function POST() {
 
 export async function GET() {
   try {
-    const products = getProducts();
+    const products = productDb.getAllActive();
     const notificationsEnabled = areNotificationsEnabled();
     const isRunning = priceMonitorScheduler.isSchedulerRunning();
     

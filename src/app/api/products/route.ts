@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         url: url.trim(),
         target_price,
-        current_price: currentPrice,
+        current_price: currentPrice ?? undefined,
         store: store.trim()
       });
 
@@ -213,12 +213,11 @@ export async function PUT(request: NextRequest) {
     }
 
     // Atualizar produto
-    await productDb.update(id, {
+    await productDb.update(id, userId, {
       name: name?.trim(),
       url: url?.trim(),
       target_price,
-      store: store?.trim(),
-      is_active
+      store: store?.trim()
     });
 
     // Buscar produto atualizado

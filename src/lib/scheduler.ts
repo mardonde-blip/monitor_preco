@@ -135,10 +135,16 @@ export class PriceMonitorScheduler {
       
       // Atualiza o preço atual do produto no banco de dados
       await this.updateProductViaAPI({
-        ...product,
-        current_price: newPrice,
-        updated_at: new Date().toISOString()
-      });
+        id: product.id.toString(),
+        name: product.name,
+        url: product.url,
+        initialPrice: product.target_price,
+        currentPrice: newPrice,
+        targetPrice: product.target_price,
+        selector: '',
+        addedAt: product.created_at,
+        userId: product.user_id
+      } as Product);
       
       // Verifica se o preço atual está abaixo do preço alvo (envia notificação quando preço alvo > preço atual)
       const targetPrice = product.target_price;
@@ -192,7 +198,16 @@ export class PriceMonitorScheduler {
         });
         
         await this.telegramNotifier.sendPriceAlert(
-          product,
+          {
+            id: product.id.toString(),
+            name: product.name,
+            url: product.url,
+            initialPrice: product.target_price,
+            currentPrice: product.current_price,
+            targetPrice: product.target_price,
+            selector: '',
+            addedAt: product.created_at
+          } as Product,
           previousPrice,
           product.current_price!
         );
@@ -223,26 +238,22 @@ export class PriceMonitorScheduler {
   private async sendEmailAlert(product: MonitoredProduct, oldPrice: number, newPrice: number): Promise<void> {
     try {
       // Buscar usuários que monitoram este produto
-      const users = await this.getUsersForProduct(product.id);
+      const users = await this.getUsersForProduct(product.id.toString());
       
       for (const user of users) {
         if (user.email) {
-          const discount = ((oldPrice - newPrice) / oldPrice * 100).toFixed(1);
-          
-          const emailContent = emailTemplates.priceAlert({
-            userName: user.name || 'Usuário',
-            productName: product.name,
-            productUrl: product.url,
-            oldPrice: oldPrice,
-            newPrice: newPrice,
-            discount: discount,
-            targetPrice: product.targetPrice || product.initialPrice
-          });
+          const emailContent = emailTemplates.priceAlertEmail(
+            user.name || 'Usuário',
+            product.name,
+            oldPrice,
+            newPrice,
+            product.url
+          );
           
           await sendEmail({
             to: user.email,
-            subject: `🚨 Alerta de Preço: ${product.name}`,
-            html: emailContent
+            subject: emailContent.subject,
+            html: emailContent.html
           });
           
           console.log(`Email de alerta enviado para ${user.email}`);
@@ -297,13 +308,19 @@ export class PriceMonitorScheduler {
    */
   private async updateProductViaAPI(product: Product): Promise<void> {
     try {
+      // Buscar o produto original para obter o user_id
+      const originalProduct = productDb.getById(parseInt(product.id));
+      if (!originalProduct) {
+        throw new Error(`Produto com ID ${product.id} não encontrado`);
+      }
+      
       // Usar diretamente o banco de dados em vez da API para evitar problemas de autenticação
-      productDb.update(product.id, product.userId, {
+      productDb.update(parseInt(product.id), originalProduct.user_id, {
         name: product.name,
         url: product.url,
-        target_price: product.targetPrice,
+        target_price: product.targetPrice || 0,
         current_price: product.currentPrice,
-        store: product.store
+        store: originalProduct.store
       });
     } catch (error) {
       console.error('Erro ao atualizar produto no banco:', error);

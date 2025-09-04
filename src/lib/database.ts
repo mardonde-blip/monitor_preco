@@ -129,11 +129,7 @@ export class UserDatabase {
     WHERE id = ?
   `);
   
-  private updateTelegramId = db.prepare(`
-    UPDATE users 
-    SET telegram_id = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `);
+
   
   private deleteUser = db.prepare('DELETE FROM users WHERE id = ?');
 
@@ -209,7 +205,22 @@ export class UserDatabase {
 
   // Atualizar Telegram ID
   updateTelegramId(id: number, telegramId: string): User | null {
-    const result = this.updateTelegramId.run(telegramId, id);
+    const user = this.getById(id);
+    if (!user) {
+      return null;
+    }
+    
+    const result = this.updateUser.run(
+      user.nome_completo,
+      user.email,
+      user.senha,
+      user.data_nascimento,
+      user.sexo,
+      user.celular,
+      telegramId,
+      id
+    );
+    
     if (result.changes === 0) {
       return null;
     }
@@ -288,7 +299,7 @@ export class ProductDatabase {
       name: product.name,
       url: product.url,
       target_price: product.target_price,
-      current_price: product.current_price || null,
+      current_price: product.current_price || undefined,
       store: product.store,
       is_active: true,
       created_at: now,
@@ -384,7 +395,7 @@ export class TelegramConfigDatabase {
       return this.getByUserId(config.user_id)!;
     } else {
       // Criar nova configuração
-      const result = this.insertConfig.run(
+      this.insertConfig.run(
         config.user_id,
         config.bot_token || null,
         config.chat_id || null,
@@ -401,8 +412,10 @@ export class TelegramConfigDatabase {
     const result = this.selectConfigByUserId.get(userId) as {
       id: number;
       user_id: number;
+      bot_token?: string;
       chat_id: string;
       is_enabled: number;
+      message_template: string;
       notification_settings: string;
       created_at: string;
       updated_at: string;

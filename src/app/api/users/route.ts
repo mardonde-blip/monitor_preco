@@ -178,13 +178,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Buscar usuário existente para manter a senha
+    const existingUser = userDb.getById(parseInt(id));
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, error: 'Usuário não encontrado' },
+        { status: 404 }
+      );
+    }
+
     // Atualizar usuário
     const updatedUser = userDb.update(parseInt(id), {
       nome_completo: nome_completo.trim(),
       email: email.toLowerCase().trim(),
       data_nascimento,
       sexo,
-      celular
+      celular,
+      senha: existingUser.senha,
+      telegram_id: existingUser.telegram_id
     });
 
     if (!updatedUser) {

@@ -21,7 +21,7 @@ interface ProductReviewsProps {
   totalReviews?: number;
 }
 
-export default function ProductReviews({ productTitle, averageRating = 0, totalReviews = 0 }: ProductReviewsProps) {
+export default function ProductReviews({ }: ProductReviewsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showWriteReview, setShowWriteReview] = useState(false);
   const [newReview, setNewReview] = useState({

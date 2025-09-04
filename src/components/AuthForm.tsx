@@ -160,7 +160,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
       } else {
         setError(data.error || 'Erro no login');
       }
-    } catch (error) {
+    } catch {
       setError('Erro de conexão');
     } finally {
       setLoading(false);
@@ -212,8 +212,8 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
       } else {
         setError(data.error || 'Erro no cadastro');
       }
-    } catch (error) {
-      setError('Erro de conexão');
+    } catch {
+        setError('Erro de conexão');
     } finally {
       setLoading(false);
     }
