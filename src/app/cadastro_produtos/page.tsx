@@ -37,24 +37,24 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        } else {
+          router.push('/');
+        }
+      } catch {
         router.push('/');
+      } finally {
+        setLoading(false);
       }
-    } catch (_) {
-      router.push('/');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    
+    checkAuth();
+  }, [router]);
 
 
 
@@ -95,7 +95,7 @@ export default function Dashboard() {
           showNotification(data.error || 'Erro ao adicionar produto', 'error');
         }
       }
-    } catch (_) {
+    } catch {
       showNotification('Erro de conexão. Tente novamente.', 'error');
     } finally {
       setIsSubmitting(false);

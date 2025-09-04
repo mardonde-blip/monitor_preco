@@ -44,25 +44,37 @@ export default function ProductsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    checkAuth();
-    loadSchedulerStatus();
-  }, [checkAuth, loadSchedulerStatus]);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        loadProducts();
-      } else {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          loadProducts();
+        } else {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
         router.push('/');
       }
-    } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
-      router.push('/');
-    }
-  };
+    };
+
+    const loadSchedulerStatus = async () => {
+      try {
+        const response = await fetch('/api/scheduler');
+        if (response.ok) {
+          const data = await response.json();
+          setSchedulerStatus({ isRunning: data.isRunning, interval: monitoringInterval });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar status do scheduler:', error);
+      }
+    };
+
+    checkAuth();
+    loadSchedulerStatus();
+  }, [router, monitoringInterval]);
 
   const loadProducts = async () => {
     try {
@@ -176,17 +188,7 @@ export default function ProductsPage() {
     }
   };
 
-  const loadSchedulerStatus = async () => {
-    try {
-      const response = await fetch('/api/scheduler');
-      if (response.ok) {
-        const data = await response.json();
-        setSchedulerStatus({ isRunning: data.isRunning, interval: monitoringInterval });
-      }
-    } catch (error) {
-      console.error('Erro ao carregar status do scheduler:', error);
-    }
-  };
+
 
   const toggleScheduler = async () => {
     try {

@@ -64,7 +64,7 @@ export default function ResetPassword() {
         } else {
           setError(data.error || 'Token inválido ou expirado');
         }
-      } catch (_) {
+      } catch {
         setError('Erro ao verificar token');
       } finally {
         setVerifying(false);
@@ -112,7 +112,7 @@ export default function ResetPassword() {
       } else {
         setError(data.error || 'Erro ao redefinir senha');
       }
-    } catch (_) {
+    } catch {
       setError('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);

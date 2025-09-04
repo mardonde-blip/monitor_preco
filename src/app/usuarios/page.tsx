@@ -18,24 +18,7 @@ export default function ListaUsuarios() {
   const router = useRouter();
   const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
-  // Carregar usuários
-  const loadUsers = async () => {
-    try {
-      const response = await fetch('/api/users');
-      const result = await response.json();
 
-      if (result.success) {
-        setUsers(result.data);
-      } else {
-        setMessage({ type: 'error', text: 'Erro ao carregar usuários' });
-      }
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      setMessage({ type: 'error', text: 'Erro de conexão' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Deletar usuário
   const handleDelete = async (id: number, nome: string) => {
@@ -82,24 +65,41 @@ export default function ListaUsuarios() {
   };
 
   useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        const result = await response.json();
+
+        if (result.success) {
+          setUsers(result.data);
+        } else {
+          setMessage({ type: 'error', text: 'Erro ao carregar usuários' });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+        setMessage({ type: 'error', text: 'Erro de conexão' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const loadCurrentUser = async () => {
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        const result = await response.json();
+        if (result.success) {
+          setCurrentUser(result.data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário logado:', error);
+      }
+    };
+
     loadUsers();
     if (userId) {
       loadCurrentUser();
     }
   }, [userId]);
-
-  // Carregar usuário logado
-  const loadCurrentUser = async () => {
-    try {
-      const response = await fetch(`/api/users/${userId}`);
-      const result = await response.json();
-      if (result.success) {
-        setCurrentUser(result.data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar usuário logado:', error);
-    }
-  };
 
   // Auto-hide message after 5 seconds
   useEffect(() => {

@@ -184,15 +184,15 @@ export default function TelegramConfigPage() {
           <div style={{ borderLeft: '4px solid #2563eb', paddingLeft: '1rem' }}>
             <h4 style={{ fontWeight: '500', marginBottom: '0.5rem' }}>1. Configuração Básica</h4>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>
-              Na aba "Configuração", insira seu Token do Bot e Chat ID do Telegram.
-              Use o botão "Testar Configuração" para verificar se está funcionando.
+              Na aba &quot;Configuração&quot;, insira seu Token do Bot e Chat ID do Telegram.
+              Use o botão &quot;Testar Configuração&quot; para verificar se está funcionando.
             </p>
           </div>
           
           <div style={{ borderLeft: '4px solid #16a34a', paddingLeft: '1rem' }}>
             <h4 style={{ fontWeight: '500', marginBottom: '0.5rem' }}>2. Personalizar Template</h4>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>
-              Na aba "Template", escolha um template predefinido ou crie o seu próprio.
+              Na aba &quot;Template&quot;, escolha um template predefinido ou crie o seu próprio.
               Use as variáveis disponíveis para personalizar as mensagens.
             </p>
           </div>
@@ -200,7 +200,7 @@ export default function TelegramConfigPage() {
           <div style={{ borderLeft: '4px solid #9333ea', paddingLeft: '1rem' }}>
             <h4 style={{ fontWeight: '500', marginBottom: '0.5rem' }}>3. Configurar Notificações</h4>
             <p style={{ fontSize: '0.9rem', color: '#666' }}>
-              Na aba "Notificações", escolha quais tipos de alertas você deseja receber:
+              Na aba &quot;Notificações&quot;, escolha quais tipos de alertas você deseja receber:
               quedas de preço, metas atingidas ou resumos diários.
             </p>
           </div>

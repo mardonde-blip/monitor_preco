@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Retornar usuário sem senha
-    const { senha: _, ...userWithoutPassword } = updatedUser;
+    const { senha, ...userWithoutPassword } = updatedUser;
 
     return NextResponse.json({
       message: 'ID do Telegram atualizado com sucesso',

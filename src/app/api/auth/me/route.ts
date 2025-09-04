@@ -34,7 +34,7 @@ export async function GET() {
     }
 
     // Retornar dados do usuário (sem senha)
-    const { senha: _, ...userWithoutPassword } = user;
+    const { senha, ...userWithoutPassword } = user;
     
     return NextResponse.json({
       user: userWithoutPassword
