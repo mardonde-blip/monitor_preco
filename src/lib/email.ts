@@ -19,6 +19,12 @@ interface EmailData {
 
 // Função para enviar email
 export async function sendEmail({ to, subject, html, text }: EmailData) {
+  // Verificar se as credenciais de email estão configuradas
+  if (!process.env.EMAIL_PASSWORD || process.env.EMAIL_PASSWORD.trim() === '') {
+    console.warn('Credenciais de email não configuradas. Email não será enviado.');
+    return { success: false, error: 'Credenciais de email não configuradas' };
+  }
+
   try {
     const mailOptions = {
       from: `"Lucre Na Promo" <${process.env.EMAIL_USER || 'lucrenapromo@gmail.com'}>`,
