@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Retornar usuário sem senha
-    const { senha, ...userWithoutPassword } = newUser;
+    const { senha: _, ...userWithoutPassword } = newUser;
 
     return NextResponse.json({
       success: true,
