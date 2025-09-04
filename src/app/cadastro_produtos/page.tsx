@@ -10,15 +10,7 @@ interface User {
   telegram_id?: string;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  url: string;
-  target_price: number;
-  current_price?: number;
-  store: string;
-  is_active: boolean;
-}
+
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -46,7 +38,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const checkAuth = async () => {
     try {
@@ -57,7 +49,7 @@ export default function Dashboard() {
       } else {
         router.push('/');
       }
-    } catch (error) {
+    } catch (_) {
       router.push('/');
     } finally {
       setLoading(false);
@@ -70,8 +62,8 @@ export default function Dashboard() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/');
-    } catch (error) {
-      console.error('Erro no logout:', error);
+    } catch (_) {
+      console.error('Erro no logout:', _);
     }
   };
 
@@ -103,7 +95,7 @@ export default function Dashboard() {
           showNotification(data.error || 'Erro ao adicionar produto', 'error');
         }
       }
-    } catch (error) {
+    } catch (_) {
       showNotification('Erro de conexão. Tente novamente.', 'error');
     } finally {
       setIsSubmitting(false);

@@ -1,6 +1,5 @@
 import { chromium, Browser, Page } from 'playwright';
 import * as cheerio from 'cheerio';
-import axios from 'axios';
 import { ScrapingResult } from '@/types';
 
 // Configuração otimizada para Playwright no Vercel
@@ -245,7 +244,7 @@ export class PlaywrightPriceScraper {
             }
           }
         }
-      } catch (error) {
+      } catch (_) {
         // Continuar tentando outros seletores
       }
     }

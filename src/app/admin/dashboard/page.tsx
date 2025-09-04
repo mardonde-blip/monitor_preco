@@ -72,12 +72,12 @@ export default function AdminDashboard() {
       } else {
         setError('Erro ao carregar estatísticas');
       }
-    } catch (statsError) {
+    } catch {
       setError('Erro de conexão');
     } finally {
         setLoading(false);
       }
-    }, []);
+    }, [router]);
 
   useEffect(() => {
     loadStats();

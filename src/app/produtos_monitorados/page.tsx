@@ -46,7 +46,7 @@ export default function ProductsPage() {
   useEffect(() => {
     checkAuth();
     loadSchedulerStatus();
-  }, []);
+  }, [checkAuth, loadSchedulerStatus]);
 
   const checkAuth = async () => {
     try {

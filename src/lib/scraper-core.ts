@@ -947,7 +947,6 @@ export class PriceScraper {
       }
 
       // Análise de texto simples sem DOM parsing
-      const content = response.data.toLowerCase();
       const originalContent = response.data;
       
       // Padrões de preço mais robustos

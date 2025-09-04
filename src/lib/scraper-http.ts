@@ -220,7 +220,7 @@ export class HttpPriceScraper {
         if (foundPrice > 0) {
           return { success: true, price: foundPrice, selector: foundSelector };
         }
-      } catch (error) {
+      } catch (_) {
         // Continuar tentando outros seletores
       }
     }

@@ -57,7 +57,7 @@ export default function ForgotPassword() {
       } else {
         setError(data.error || 'Erro ao enviar solicitação');
       }
-    } catch (error) {
+    } catch (_) {
       setError('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);

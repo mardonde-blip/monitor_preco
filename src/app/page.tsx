@@ -8,10 +8,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/me');
@@ -22,11 +18,17 @@ export default function Home() {
         // Usuário não está logado, mostrar formulário de login
         setLoading(false);
       }
-    } catch (error) {
+    } catch (_) {
       // Erro de conexão, mostrar formulário de login
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb, User } from '@/lib/database';
+import { userDb } from '@/lib/database';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 // GET - Listar todos os usuários
@@ -11,7 +11,7 @@ export async function GET() {
       data: users,
       count: users.length
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao buscar usuários:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
@@ -111,10 +111,10 @@ export async function POST(request: NextRequest) {
       data: userWithoutPassword
     }, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao criar usuário:', error);
     
-    if (error.message === 'Email já cadastrado') {
+    if (error instanceof Error && error.message === 'Email já cadastrado') {
       return NextResponse.json(
         { success: false, error: 'Este email já está cadastrado' },
         { status: 409 }
@@ -200,10 +200,10 @@ export async function PUT(request: NextRequest) {
       data: updatedUser
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao atualizar usuário:', error);
     
-    if (error.message === 'Email já cadastrado') {
+    if (error instanceof Error && error.message === 'Email já cadastrado') {
       return NextResponse.json(
         { success: false, error: 'Este email já está cadastrado' },
         { status: 409 }
@@ -244,7 +244,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Usuário deletado com sucesso'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao deletar usuário:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

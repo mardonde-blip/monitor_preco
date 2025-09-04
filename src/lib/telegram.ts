@@ -101,7 +101,7 @@ export class TelegramNotifier {
     }
   }
 
-  async getBotInfo(): Promise<any> {
+  async getBotInfo(): Promise<{id: number; is_bot: boolean; first_name: string; username?: string}> {
     if (!this.bot) {
       throw new Error('Telegram bot not initialized');
     }
@@ -114,7 +114,7 @@ export class TelegramNotifier {
     }
   }
 
-  async getChatInfo(): Promise<any> {
+  async getChatInfo(): Promise<{id: number; type: string; title?: string; username?: string}> {
     if (!this.bot || !this.config) {
       throw new Error('Telegram not initialized');
     }

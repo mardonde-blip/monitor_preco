@@ -1,6 +1,10 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+interface SQLiteError extends Error {
+  code: string;
+}
+
 const dbPath = path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
@@ -146,8 +150,8 @@ export class UserDatabase {
         user.telegram_id || null
       );
       return this.getById(result.lastInsertRowid as number)!;
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as SQLiteError).code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('Email já cadastrado');
       }
       throw error;
@@ -195,8 +199,8 @@ export class UserDatabase {
         return null;
       }
       return this.getById(id);
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as SQLiteError).code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('Email já cadastrado');
       }
       throw error;
@@ -394,7 +398,15 @@ export class TelegramConfigDatabase {
 
   // Buscar configuração por usuário
   getByUserId(userId: number): UserTelegramConfig | null {
-    const result = this.selectConfigByUserId.get(userId) as any;
+    const result = this.selectConfigByUserId.get(userId) as {
+      id: number;
+      user_id: number;
+      chat_id: string;
+      is_enabled: number;
+      notification_settings: string;
+      created_at: string;
+      updated_at: string;
+    } | undefined;
     if (!result) return null;
     
     return {
@@ -467,9 +479,21 @@ class AdminDatabase {
 
   // Obter estatísticas gerais do sistema
   getSystemStats() {
-    const userStats = this.getUserStats.get() as any;
-    const productStats = this.getProductStats.get() as any;
-    const telegramStats = this.getTelegramStats.get() as any;
+    const userStats = this.getUserStats.get() as {
+      total: number;
+      active: number;
+      inactive: number;
+    };
+    const productStats = this.getProductStats.get() as {
+      total: number;
+      active: number;
+      inactive: number;
+    };
+    const telegramStats = this.getTelegramStats.get() as {
+      total: number;
+      enabled: number;
+      disabled: number;
+    };
 
     return {
       users: userStats,

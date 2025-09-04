@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       message: 'Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha.'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao processar solicitação de reset:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

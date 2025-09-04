@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { getUserDb } from '@/lib/database';
-import type { ResetToken } from '@/types/auth';
 
 // POST - Redefinir senha com token
 export async function POST(request: NextRequest) {
@@ -78,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao redefinir senha:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
@@ -125,7 +122,7 @@ export async function GET(request: NextRequest) {
       email: tokenData.email
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao verificar token:', error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

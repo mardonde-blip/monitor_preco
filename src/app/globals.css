@@ -1,21 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paleta Natural Serenity */
+  --ash-gray: #cad2c5;
+  --cambridge-blue: #84a98c;
+  --hookers-green: #52796f;
+  --dark-slate-gray: #354f52;
+  --charcoal: #2f3e46;
+  
+  /* Cores principais do sistema */
+  --background: var(--ash-gray);
+  --foreground: var(--charcoal);
+  --primary: var(--hookers-green);
+  --secondary: var(--cambridge-blue);
+  --accent: var(--dark-slate-gray);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-ash-gray: var(--ash-gray);
+  --color-cambridge-blue: var(--cambridge-blue);
+  --color-hookers-green: var(--hookers-green);
+  --color-dark-slate-gray: var(--dark-slate-gray);
+  --color-charcoal: var(--charcoal);
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--charcoal);
+    --foreground: var(--ash-gray);
   }
 }
 

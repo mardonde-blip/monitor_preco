@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { userDb } from '@/lib/database';
 import { cookies } from 'next/headers';
 
@@ -34,8 +34,7 @@ export async function GET() {
     }
 
     // Retornar dados do usuário (sem senha)
-    const { senha, ...userWithoutPassword } = user;
-    // senha é removida mas não usada
+    const { senha: _, ...userWithoutPassword } = user;
     
     return NextResponse.json({
       user: userWithoutPassword
