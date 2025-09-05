@@ -15,8 +15,11 @@ export default function Home() {
         if (response.ok) {
           // Usuário já está logado, redirecionar para dashboard
           router.push('/cadastro_produtos');
+        } else if (response.status === 401) {
+          // Usuário não está logado (esperado), mostrar formulário de login
+          setLoading(false);
         } else {
-          // Usuário não está logado, mostrar formulário de login
+          // Outro erro, mostrar formulário de login
           setLoading(false);
         }
       } catch {
