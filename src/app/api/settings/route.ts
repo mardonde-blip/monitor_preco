@@ -137,11 +137,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// Função auxiliar para obter configurações (para uso interno)
-export function getSettings(): NotificationSettings {
-  return settings;
-}
-
 // Função auxiliar para definir configurações (para uso interno)
 export function setSettings(newSettings: NotificationSettings): void {
   settings = newSettings;
