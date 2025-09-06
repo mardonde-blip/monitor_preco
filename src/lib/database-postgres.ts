@@ -15,6 +15,7 @@ const pool = new Pool({
 });
 
 // Função para executar queries
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function query(text: string, params?: any[]) {
   const client = await pool.connect();
   try {

@@ -31,15 +31,29 @@ export interface Product {
 const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
 
 // Importar o banco apropriado
-let db: any;
+let db: {
+  initDatabase?: () => Promise<void>;
+  createUser?: (email: string, senha: string) => Promise<{ id: number; email: string; created_at: string }>;
+  getUserByEmail?: (email: string) => Promise<{ id: number; email: string; senha: string } | null>;
+  getUserById?: (id: number) => Promise<{ id: number; email: string } | null>;
+  createProduct?: (userId: number, name: string, url: string, targetPrice: number) => Promise<{ id: number; name: string; url: string; target_price: number; current_price: number | null; created_at: string }>;
+  getAllProducts?: (userId?: number) => Promise<Array<{ id: number; user_id: number; name: string; url: string; target_price: number; current_price: number | null; last_checked: string | null; created_at: string }>>;
+  getProductById?: (id: number) => Promise<{ id: number; user_id: number; name: string; url: string; target_price: number; current_price: number | null; last_checked: string | null; created_at: string } | null>;
+  updateProduct?: (id: number, userId: number, name?: string, url?: string, targetPrice?: number, currentPrice?: number) => Promise<void>;
+  deleteProduct?: (id: number, userId: number) => Promise<void>;
+  getSetting?: (key: string) => Promise<string | null>;
+  setSetting?: (key: string, value: string) => Promise<void>;
+};
 
 if (isProduction) {
   // Usar PostgreSQL em produção
   console.log('🐘 Usando PostgreSQL (Produção)');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   db = require('./database-postgres');
 } else {
   // Usar SQLite localmente
   console.log('🗃️ Usando SQLite (Local)');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   db = require('./database');
 }
 
@@ -132,7 +146,7 @@ export class DatabaseAdapter {
     }
   }
 
-  static async setSetting(key: string, value: string): Promise<any> {
+  static async setSetting(key: string, value: string): Promise<void> {
     if (isProduction) {
       return await db.setSetting(key, value);
     } else {
