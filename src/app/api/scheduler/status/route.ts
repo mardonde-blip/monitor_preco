@@ -17,9 +17,9 @@ export async function GET() {
       lastRun: priceMonitorScheduler.getLastRun() || null,
       lastCheck: priceMonitorScheduler.getLastRun() || null,
       settings: {
-        telegramConfigured: !!(settings.telegram.botToken && 
-                              settings.telegram.chatId && 
-                              settings.telegram.chatId !== 'your_chat_id_here')
+        telegramConfigured: !!(await DatabaseAdapter.getSetting('telegram_bot_token') && 
+                              await DatabaseAdapter.getSetting('telegram_chat_id') && 
+                              await DatabaseAdapter.getSetting('telegram_chat_id') !== 'your_chat_id_here')
       },
       status: {
         scheduler: isRunning ? 'running' : 'stopped',
