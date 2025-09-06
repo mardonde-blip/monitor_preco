@@ -137,13 +137,9 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// Função auxiliar para definir configurações (para uso interno)
-export function setSettings(newSettings: NotificationSettings): void {
-  settings = newSettings;
-}
-
 // Função para verificar se as notificações estão habilitadas e configuradas
-export function areNotificationsEnabled(): boolean {
+export async function areNotificationsEnabled(): Promise<boolean> {
+  const settings = await getSettings();
   return settings.enabled && 
          !!(settings.telegram.botToken && 
             settings.telegram.chatId && 
