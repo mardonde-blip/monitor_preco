@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { priceMonitorScheduler } from '@/lib/scheduler';
-import { productDb } from '@/lib/database';
-import { getSettings, areNotificationsEnabled } from '../../settings/route';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 
 export async function GET() {
   try {
     const isRunning = priceMonitorScheduler.isSchedulerRunning();
-    const products = productDb.getAllActive();
-    const settings = getSettings();
-    const notificationsEnabled = areNotificationsEnabled();
+    const products = await DatabaseAdapter.getAllProducts();
+    const notificationsEnabled = await DatabaseAdapter.getSetting('notifications_enabled') === 'true';
     
     return NextResponse.json({
       success: true,
