@@ -60,7 +60,7 @@ if (isProduction) {
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
   private static checkDb(methodName: string) {
-    if (isProduction && (!db || typeof db[methodName] !== 'function')) {
+    if (isProduction && (!db || typeof (db as any)[methodName] !== 'function')) {
       throw new Error(`Database not properly initialized - method ${methodName} not available`);
     }
   }
