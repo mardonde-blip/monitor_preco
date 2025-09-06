@@ -60,6 +60,7 @@ if (isProduction) {
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
   private static checkDb(methodName: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (isProduction && (!db || typeof (db as any)[methodName] !== 'function')) {
       throw new Error(`Database not properly initialized - method ${methodName} not available`);
     }
