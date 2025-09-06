@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { productDb } from '@/lib/database';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Verificar se o produto pertence ao usuário e deletar
-    const deleted = productDb.delete(productId, userId);
+    const deleted = await DatabaseAdapter.deleteProduct(productId, userId);
     
     if (!deleted) {
       return NextResponse.json(

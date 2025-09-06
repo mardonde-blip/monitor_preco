@@ -6,6 +6,12 @@
     }
   },
   "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
   }
 }

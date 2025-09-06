@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 
 // GET - Buscar usuário por ID
 export async function GET(
@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    const user = userDb.getById(id);
+    const user = await DatabaseAdapter.getUserById(id);
 
     if (!user) {
       return NextResponse.json(

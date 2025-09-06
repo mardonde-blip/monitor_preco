@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,15 +24,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Autenticar usuário
-    const user = userDb.authenticate(email, senha);
+    // Buscar usuário por email
+    const user = await DatabaseAdapter.getUserByEmail(email);
     
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Email ou senha incorretos' },
-        { status: 401 }
-      );
-    }
+    // Verificar se usuário existe e senha está correta
+     if (!user || !bcrypt.compareSync(senha, user.senha)) {
+       return NextResponse.json(
+         { error: 'Email ou senha incorretos' },
+         { status: 401 }
+       );
+     }
 
     // Criar sessão (cookie)
     const cookieStore = await cookies();

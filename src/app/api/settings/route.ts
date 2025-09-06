@@ -1,19 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationSettings } from '@/types';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 
-// Configurações padrão do sistema
-let settings: NotificationSettings = {
-  enabled: !!(process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN && 
-             process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID && 
-             process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID !== 'your_chat_id_here'),
-  telegram: {
-    botToken: process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || '',
-    chatId: process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || ''
+// Função para obter configurações do banco
+async function getSettings(): Promise<NotificationSettings> {
+  try {
+    const enabled = await DatabaseAdapter.getSetting('notifications_enabled');
+    const botToken = await DatabaseAdapter.getSetting('telegram_bot_token');
+    const chatId = await DatabaseAdapter.getSetting('telegram_chat_id');
+    
+    return {
+      enabled: enabled === 'true' || !!(process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN && 
+               process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID && 
+               process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID !== 'your_chat_id_here'),
+      telegram: {
+        botToken: botToken || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || '',
+        chatId: chatId || process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || ''
+      }
+    };
+  } catch (error) {
+    console.error('Erro ao buscar configurações do banco:', error);
+    // Fallback para variáveis de ambiente
+    return {
+      enabled: !!(process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN && 
+                 process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID && 
+                 process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID !== 'your_chat_id_here'),
+      telegram: {
+        botToken: process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || '',
+        chatId: process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID || ''
+      }
+    };
   }
-};
+}
 
 export async function GET() {
   try {
+    const settings = await getSettings();
+    
     // Verificar se as configurações do Telegram estão válidas
     const telegramEnabled = !!(settings.telegram.botToken && 
                               settings.telegram.chatId && 
@@ -38,23 +61,35 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const newSettings: Partial<NotificationSettings> = await request.json();
+    const currentSettings = await getSettings();
     
-    // Atualizar configurações
-    settings = {
-      ...settings,
+    // Atualizar configurações no banco
+    const updatedSettings = {
+      ...currentSettings,
       ...newSettings,
       telegram: {
-        ...settings.telegram,
+        ...currentSettings.telegram,
         ...newSettings.telegram
       }
     };
     
+    // Salvar no banco de dados
+    if (updatedSettings.enabled !== undefined) {
+      await DatabaseAdapter.setSetting('notifications_enabled', updatedSettings.enabled.toString());
+    }
+    if (updatedSettings.telegram?.botToken !== undefined) {
+      await DatabaseAdapter.setSetting('telegram_bot_token', updatedSettings.telegram.botToken);
+    }
+    if (updatedSettings.telegram?.chatId !== undefined) {
+      await DatabaseAdapter.setSetting('telegram_chat_id', updatedSettings.telegram.chatId);
+    }
+    
     console.log('✅ Configurações atualizadas:', {
-      enabled: settings.enabled,
-      telegramConfigured: !!(settings.telegram.botToken && settings.telegram.chatId)
+      enabled: updatedSettings.enabled,
+      telegramConfigured: !!(updatedSettings.telegram.botToken && updatedSettings.telegram.chatId)
     });
     
-    return NextResponse.json(settings);
+    return NextResponse.json(updatedSettings);
   } catch (error) {
     console.error('Erro ao atualizar configurações:', error);
     return NextResponse.json(
@@ -85,11 +120,14 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    settings = updatedSettings;
+    // Salvar todas as configurações no banco
+    await DatabaseAdapter.setSetting('notifications_enabled', updatedSettings.enabled.toString());
+    await DatabaseAdapter.setSetting('telegram_bot_token', updatedSettings.telegram?.botToken || '');
+    await DatabaseAdapter.setSetting('telegram_chat_id', updatedSettings.telegram?.chatId || '');
     
     console.log('✅ Configurações substituídas completamente');
     
-    return NextResponse.json(settings);
+    return NextResponse.json(updatedSettings);
   } catch (error) {
     console.error('Erro ao substituir configurações:', error);
     return NextResponse.json(

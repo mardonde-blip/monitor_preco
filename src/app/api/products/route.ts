@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { productDb } from '@/lib/database';
+import { DatabaseAdapter } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 import { createPriceScraper } from '@/lib/scraper';
 import { getHttpScraper } from '@/lib/scraper-http';
@@ -26,7 +26,7 @@ export async function GET() {
     }
 
     // Buscar produtos do usuário
-    const products = productDb.getByUserId(userId);
+    const products = await DatabaseAdapter.getProductsByUserId(userId);
 
     return NextResponse.json({ products });
 
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     // Criar produto
     try {
-      const newProduct = productDb.create({
+      const newProduct = await DatabaseAdapter.createProduct({
         user_id: userId,
         name: name.trim(),
         url: url.trim(),
@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar se o produto pertence ao usuário
-    const existingProduct = productDb.getById(id);
+    const existingProduct = await DatabaseAdapter.getProductById(id);
     if (!existingProduct || existingProduct.user_id !== userId) {
       return NextResponse.json(
         { error: 'Produto não encontrado ou não autorizado' },
@@ -212,16 +212,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Atualizar produto
-    await productDb.update(id, userId, {
+    // Atualizar produto (implementar método update no adapter)
+    const updatedProduct = await DatabaseAdapter.updateProduct(id, userId, {
       name: name?.trim(),
       url: url?.trim(),
       target_price,
       store: store?.trim()
     });
-
-    // Buscar produto atualizado
-    const updatedProduct = productDb.getById(id);
 
     return NextResponse.json({
       message: 'Produto atualizado com sucesso',
