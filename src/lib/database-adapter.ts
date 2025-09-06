@@ -59,8 +59,14 @@ if (isProduction) {
 
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
+  private static checkDb(methodName: string) {
+    if (isProduction && (!db || typeof db[methodName] !== 'function')) {
+      throw new Error(`Database not properly initialized - method ${methodName} not available`);
+    }
+  }
   static async initDatabase() {
     if (isProduction) {
+      this.checkDb('initDatabase');
       return await db.initDatabase();
     } else {
       // SQLite já inicializa automaticamente
@@ -77,6 +83,7 @@ export class DatabaseAdapter {
     celular: string;
   }): Promise<User> {
     if (isProduction) {
+      this.checkDb('createUser');
       return await db.createUser(userData);
     } else {
       return db.createUser(userData);
@@ -85,6 +92,7 @@ export class DatabaseAdapter {
 
   static async getUserByEmail(email: string): Promise<User | null> {
     if (isProduction) {
+      this.checkDb('getUserByEmail');
       return await db.getUserByEmail(email);
     } else {
       return db.getUserByEmail(email);
@@ -93,6 +101,7 @@ export class DatabaseAdapter {
 
   static async getUserById(id: number): Promise<User | null> {
     if (isProduction) {
+      this.checkDb('getUserById');
       return await db.getUserById(id);
     } else {
       return db.getUserById(id);
