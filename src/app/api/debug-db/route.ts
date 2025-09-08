@@ -2,54 +2,65 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    console.log('🔍 Iniciando diagnóstico do banco...');
+    console.log('🔍 Diagnóstico do banco iniciado');
     
     // Verificar variáveis de ambiente
     const databaseUrl = process.env.DATABASE_URL;
+    const nodeEnv = process.env.NODE_ENV;
+    
     console.log('DATABASE_URL presente:', !!databaseUrl);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NODE_ENV:', nodeEnv);
     
     if (!databaseUrl) {
       return NextResponse.json({
         success: false,
         error: 'DATABASE_URL não configurada',
-        env: process.env.NODE_ENV
+        env: nodeEnv,
+        timestamp: new Date().toISOString()
       }, { status: 500 });
     }
     
-    // Tentar importar e testar conexão PostgreSQL
-    console.log('🐘 Tentando conectar ao PostgreSQL...');
+    // Tentar conexão básica com PostgreSQL
+    console.log('🐘 Testando conexão PostgreSQL...');
     
-    const { Pool } = await import('pg');
-    const pool = new Pool({
-      connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    
-    // Teste simples de conexão
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW() as current_time');
-    client.release();
-    
-    console.log('✅ Conexão PostgreSQL bem-sucedida!');
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Conexão com PostgreSQL estabelecida com sucesso',
-      currentTime: result.rows[0].current_time,
-      env: process.env.NODE_ENV,
-      hasDatabase: !!databaseUrl
-    });
+    try {
+      const { Pool } = await import('pg');
+      const pool = new Pool({
+        connectionString: databaseUrl,
+        ssl: nodeEnv === 'production' ? { rejectUnauthorized: false } : false
+      });
+      
+      const client = await pool.connect();
+      const result = await client.query('SELECT NOW() as current_time');
+      client.release();
+      await pool.end();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Conexão PostgreSQL bem-sucedida',
+        database_time: result.rows[0].current_time,
+        env: nodeEnv,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (dbError: any) {
+      console.error('❌ Erro na conexão PostgreSQL:', dbError);
+      return NextResponse.json({
+        success: false,
+        error: 'Erro na conexão PostgreSQL',
+        details: dbError.message,
+        env: nodeEnv,
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
     
   } catch (error: any) {
-    console.error('❌ Erro no diagnóstico:', error);
-    
+    console.error('❌ Erro geral no diagnóstico:', error);
     return NextResponse.json({
       success: false,
-      error: error.message,
-      stack: error.stack,
-      env: process.env.NODE_ENV,
-      hasDatabase: !!process.env.DATABASE_URL
+      error: 'Erro interno no diagnóstico',
+      details: error.message,
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
