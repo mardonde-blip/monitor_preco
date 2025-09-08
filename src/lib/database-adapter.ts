@@ -107,13 +107,10 @@ export class DatabaseAdapter {
     // Aguardar carregamento do módulo do banco
     const dbModule = await dbPromise;
     if (!dbModule || typeof dbModule.initDatabase !== 'function') {
-        throw new Error('Database module not properly loaded or initDatabase method not available');
-      }
-      return await dbModule.initDatabase();
-    } else {
-      // SQLite já inicializa automaticamente
-      return Promise.resolve();
+      throw new Error('Database module not properly loaded or initDatabase method not available');
     }
+    return await dbModule.initDatabase();
+  }
   }
 
   static async createUser(userData: {
