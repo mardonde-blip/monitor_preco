@@ -165,6 +165,65 @@ export async function updateProductPrice(productId: number, price: number) {
   return result.rows[0];
 }
 
+export async function getProductById(productId: number) {
+  const result = await query(
+    'SELECT * FROM monitored_products WHERE id = $1',
+    [productId]
+  );
+  return result.rows[0];
+}
+
+export async function updateProduct(productId: number, userId: number, updateData: {
+  name?: string;
+  url?: string;
+  target_price?: number;
+  current_price?: number;
+  store?: string;
+}) {
+  const setParts = [];
+  const values = [];
+  let paramIndex = 1;
+
+  if (updateData.name !== undefined) {
+    setParts.push(`name = $${paramIndex++}`);
+    values.push(updateData.name);
+  }
+  if (updateData.url !== undefined) {
+    setParts.push(`url = $${paramIndex++}`);
+    values.push(updateData.url);
+  }
+  if (updateData.target_price !== undefined) {
+    setParts.push(`target_price = $${paramIndex++}`);
+    values.push(updateData.target_price);
+  }
+  if (updateData.current_price !== undefined) {
+    setParts.push(`current_price = $${paramIndex++}`);
+    values.push(updateData.current_price);
+  }
+  if (updateData.store !== undefined) {
+    setParts.push(`store = $${paramIndex++}`);
+    values.push(updateData.store);
+  }
+
+  if (setParts.length === 0) {
+    return await getProductById(productId);
+  }
+
+  setParts.push(`updated_at = CURRENT_TIMESTAMP`);
+  values.push(productId, userId);
+
+  const queryText = `UPDATE monitored_products SET ${setParts.join(', ')} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
+  const result = await query(queryText, values);
+  return result.rows[0];
+}
+
+export async function getAllProducts() {
+  const result = await query(
+    'SELECT * FROM monitored_products WHERE is_active = true ORDER BY created_at DESC'
+  );
+  return result.rows;
+}
+
 export async function deleteProduct(productId: number, userId: number) {
   const result = await query(
     'DELETE FROM monitored_products WHERE id = $1 AND user_id = $2 RETURNING *',

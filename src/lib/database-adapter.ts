@@ -33,13 +33,16 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABA
 // Importar o banco apropriado
 let db: {
   initDatabase?: () => Promise<void>;
-  createUser?: (email: string, senha: string) => Promise<{ id: number; email: string; created_at: string }>;
-  getUserByEmail?: (email: string) => Promise<{ id: number; email: string; senha: string } | null>;
-  getUserById?: (id: number) => Promise<{ id: number; email: string } | null>;
-  createProduct?: (userId: number, name: string, url: string, targetPrice: number) => Promise<{ id: number; name: string; url: string; target_price: number; current_price: number | null; created_at: string }>;
-  getAllProducts?: (userId?: number) => Promise<Array<{ id: number; user_id: number; name: string; url: string; target_price: number; current_price: number | null; last_checked: string | null; created_at: string }>>;
-  getProductById?: (id: number) => Promise<{ id: number; user_id: number; name: string; url: string; target_price: number; current_price: number | null; last_checked: string | null; created_at: string } | null>;
-  updateProduct?: (id: number, userId: number, name?: string, url?: string, targetPrice?: number, currentPrice?: number) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createUser?: (userData: any) => Promise<User>;
+  getUserByEmail?: (email: string) => Promise<User | null>;
+  getUserById?: (id: number) => Promise<User | null>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createProduct?: (productData: any) => Promise<Product>;
+  getAllProducts?: (userId?: number) => Promise<Product[]>;
+  getProductById?: (id: number) => Promise<Product | null>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateProduct?: (id: number, userId: number, updateData: any) => Promise<void>;
   deleteProduct?: (id: number, userId: number) => Promise<void>;
   getSetting?: (key: string) => Promise<string | null>;
   setSetting?: (key: string, value: string) => Promise<void>;
@@ -68,7 +71,13 @@ export class DatabaseAdapter {
   static async initDatabase() {
     if (isProduction) {
       this.checkDb('initDatabase');
-      return await db.initDatabase();
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof (db as any).initDatabase === 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await (db as any).initDatabase();
+      }
+      throw new Error('initDatabase method not available');
     } else {
       // SQLite já inicializa automaticamente
       return Promise.resolve();
@@ -85,27 +94,36 @@ export class DatabaseAdapter {
   }): Promise<User> {
     if (isProduction) {
       this.checkDb('createUser');
-      return await db.createUser(userData);
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).createUser(userData);
     } else {
-      return db.createUser(userData);
+      if (!db || !db.createUser) throw new Error('Database not initialized');
+      return await db.createUser(userData);
     }
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
     if (isProduction) {
       this.checkDb('getUserByEmail');
-      return await db.getUserByEmail(email);
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getUserByEmail(email);
     } else {
-      return db.getUserByEmail(email);
+      if (!db || !db.getUserByEmail) throw new Error('Database not initialized');
+      return await db.getUserByEmail(email);
     }
   }
 
   static async getUserById(id: number): Promise<User | null> {
     if (isProduction) {
       this.checkDb('getUserById');
-      return await db.getUserById(id);
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getUserById(id);
     } else {
-      return db.getUserById(id);
+      if (!db || !db.getUserById) throw new Error('Database not initialized');
+      return await db.getUserById(id);
     }
   }
 
@@ -118,67 +136,102 @@ export class DatabaseAdapter {
     store: string;
   }): Promise<Product> {
     if (isProduction) {
-      return await db.createProduct(productData);
+      this.checkDb('createProduct');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).createProduct(productData);
     } else {
-      return db.createProduct(productData);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      return productDb.create(productData);
     }
   }
 
   static async getProductsByUserId(userId: number): Promise<Product[]> {
     if (isProduction) {
-      return await db.getProductsByUserId(userId);
+      this.checkDb('getProductsByUserId');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getProductsByUserId(userId);
     } else {
-      return db.getProductsByUserId(userId);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      return productDb.getByUserId(userId);
     }
   }
 
   static async updateProductPrice(productId: number, price: number): Promise<Product | null> {
     if (isProduction) {
-      return await db.updateProductPrice(productId, price);
+      this.checkDb('updateProductPrice');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).updateProductPrice(productId, price);
     } else {
-      return db.updateProductPrice(productId, price);
+      if (!db || !db.updateProduct || !db.getProductById) throw new Error('Database not initialized');
+      await db.updateProduct(productId, 0, { target_price: price });
+      return await db.getProductById(productId);
     }
   }
 
   static async deleteProduct(productId: number, userId: number): Promise<Product | null> {
     if (isProduction) {
-      return await db.deleteProduct(productId, userId);
+      this.checkDb('deleteProduct');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).deleteProduct(productId, userId);
     } else {
-      return db.deleteProduct(productId, userId);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      const deleted = productDb.delete(productId, userId);
+      return deleted ? null : null;
     }
   }
 
   static async getSetting(key: string): Promise<string | null> {
     if (isProduction) {
-      return await db.getSetting(key);
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getSetting(key);
     } else {
-      return db.getSetting(key);
+      if (!db || !db.getSetting) throw new Error('Database not initialized');
+      return await db.getSetting(key);
     }
   }
 
   static async setSetting(key: string, value: string): Promise<void> {
     if (isProduction) {
-      return await db.setSetting(key, value);
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).setSetting(key, value);
     } else {
-      return db.setSetting(key, value);
+      if (!db || !db.setSetting) throw new Error('Database not initialized');
+      return await db.setSetting(key, value);
     }
   }
 
   static async getAllProducts(): Promise<Product[]> {
     if (isProduction) {
-      const result = await db.query('SELECT * FROM monitored_products WHERE is_active = true');
-      return result.rows;
+      this.checkDb('getAllProducts');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getAllProducts();
     } else {
-      return db.getAllProducts();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      return productDb.getAllActive();
     }
   }
 
   static async getProductById(id: number): Promise<Product | null> {
     if (isProduction) {
-      const result = await db.query('SELECT * FROM monitored_products WHERE id = $1', [id]);
-      return result.rows[0] || null;
+      this.checkDb('getProductById');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).getProductById(id) || null;
     } else {
-      return db.getProductById(id);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      return productDb.getById(id);
     }
   }
 
@@ -189,40 +242,14 @@ export class DatabaseAdapter {
     store?: string;
   }): Promise<Product | null> {
     if (isProduction) {
-      const setParts = [];
-      const values = [];
-      let paramIndex = 1;
-
-      if (updateData.name !== undefined) {
-        setParts.push(`name = $${paramIndex++}`);
-        values.push(updateData.name);
-      }
-      if (updateData.url !== undefined) {
-        setParts.push(`url = $${paramIndex++}`);
-        values.push(updateData.url);
-      }
-      if (updateData.target_price !== undefined) {
-        setParts.push(`target_price = $${paramIndex++}`);
-        values.push(updateData.target_price);
-      }
-      if (updateData.store !== undefined) {
-        setParts.push(`store = $${paramIndex++}`);
-        values.push(updateData.store);
-      }
-
-      if (setParts.length === 0) {
-        return await this.getProductById(id);
-      }
-
-      setParts.push(`updated_at = CURRENT_TIMESTAMP`);
-      values.push(id, userId);
-
-      const query = `UPDATE monitored_products SET ${setParts.join(', ')} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
-      const result = await db.query(query, values);
-      return result.rows[0] || null;
+      this.checkDb('updateProduct');
+      if (!db) throw new Error('Database not initialized');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await (db as any).updateProduct(id, userId, updateData) || null;
     } else {
-      await db.updateProduct(id, userId, updateData);
-      return db.getProductById(id);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { productDb } = require('./database');
+      return productDb.update(id, userId, updateData);
     }
   }
 }
