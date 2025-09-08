@@ -111,7 +111,6 @@ export class DatabaseAdapter {
     }
     return await dbModule.initDatabase();
   }
-  }
 
   static async createUser(userData: {
     nome_completo: string;
