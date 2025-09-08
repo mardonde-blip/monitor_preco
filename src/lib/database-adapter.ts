@@ -49,16 +49,49 @@ let db: {
 };
 
 // Inicializar o banco apropriado
-let dbPromise: Promise<typeof db>;
+let db: any = null;
+let dbPromise: Promise<any>;
 
-if (isProduction) {
+if (process.env.NODE_ENV === 'production') {
   // Usar PostgreSQL em produção
   console.log('🐘 Usando PostgreSQL (Produção)');
-  dbPromise = import('./database-postgres').then(module => module);
+  dbPromise = import('./database-postgres').then(module => {
+    // PostgreSQL exporta funções diretamente
+    return {
+      initDatabase: module.initDatabase,
+      createUser: module.createUser,
+      getUserByEmail: module.getUserByEmail,
+      createProduct: module.createProduct,
+      getProductsByUserId: module.getProductsByUserId,
+      updateProductPrice: module.updateProductPrice,
+      updateProduct: module.updateProduct,
+      deleteProduct: module.deleteProduct,
+      getTelegramConfig: module.getTelegramConfig,
+      saveTelegramConfig: module.saveTelegramConfig,
+      getSetting: module.getSetting,
+      setSetting: module.setSetting
+    };
+  });
 } else {
   // Usar SQLite localmente
   console.log('🗃️ Usando SQLite (Local)');
-  dbPromise = import('./database').then(module => module);
+  dbPromise = import('./database').then(module => {
+    // SQLite exporta instâncias de classes
+    return {
+      initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
+      createUser: (userData: any) => module.userDb.create(userData),
+      getUserByEmail: (email: string) => module.userDb.getByEmail(email),
+      createProduct: (productData: any) => module.productDb.create(productData),
+      getProductsByUserId: (userId: number) => module.productDb.getByUserId(userId),
+      updateProductPrice: (id: number, price: number) => module.productDb.updatePrice(id, price),
+      updateProduct: (id: number, data: any) => module.productDb.update(id, data),
+      deleteProduct: (id: number) => module.productDb.delete(id),
+      getTelegramConfig: (userId: number) => module.telegramConfigDb.getByUserId(userId),
+      saveTelegramConfig: (config: any) => module.telegramConfigDb.save(config),
+      getSetting: (key: string) => module.adminDb.getSetting(key),
+      setSetting: (key: string, value: string) => module.adminDb.setSetting(key, value)
+    };
+  });
 }
 
 // Aguardar inicialização do banco
@@ -70,17 +103,10 @@ dbPromise.then(dbModule => {
 
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
-  private static checkDb(methodName: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (isProduction && (!db || typeof (db as any)[methodName] !== 'function')) {
-      throw new Error(`Database not properly initialized - method ${methodName} not available`);
-    }
-  }
   static async initDatabase() {
-    if (isProduction) {
-      // Aguardar carregamento do módulo do banco
-      const dbModule = await dbPromise;
-      if (!dbModule || typeof dbModule.initDatabase !== 'function') {
+    // Aguardar carregamento do módulo do banco
+    const dbModule = await dbPromise;
+    if (!dbModule || typeof dbModule.initDatabase !== 'function') {
         throw new Error('Database module not properly loaded or initDatabase method not available');
       }
       return await dbModule.initDatabase();
