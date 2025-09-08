@@ -48,17 +48,25 @@ let db: {
   setSetting?: (key: string, value: string) => Promise<void>;
 };
 
+// Inicializar o banco apropriado
+let dbPromise: Promise<typeof db>;
+
 if (isProduction) {
   // Usar PostgreSQL em produção
   console.log('🐘 Usando PostgreSQL (Produção)');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  db = require('./database-postgres');
+  dbPromise = import('./database-postgres').then(module => module);
 } else {
   // Usar SQLite localmente
   console.log('🗃️ Usando SQLite (Local)');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  db = require('./database');
+  dbPromise = import('./database').then(module => module);
 }
+
+// Aguardar inicialização do banco
+dbPromise.then(dbModule => {
+  db = dbModule;
+}).catch(error => {
+  console.error('❌ Erro ao carregar módulo do banco:', error);
+});
 
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
@@ -70,14 +78,12 @@ export class DatabaseAdapter {
   }
   static async initDatabase() {
     if (isProduction) {
-      this.checkDb('initDatabase');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof (db as any).initDatabase === 'function') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return await (db as any).initDatabase();
+      // Aguardar carregamento do módulo do banco
+      const dbModule = await dbPromise;
+      if (!dbModule || typeof dbModule.initDatabase !== 'function') {
+        throw new Error('Database module not properly loaded or initDatabase method not available');
       }
-      throw new Error('initDatabase method not available');
+      return await dbModule.initDatabase();
     } else {
       // SQLite já inicializa automaticamente
       return Promise.resolve();
