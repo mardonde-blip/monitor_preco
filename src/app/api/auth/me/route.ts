@@ -4,15 +4,15 @@ import { cookies } from 'next/headers';
 import { Pool } from 'pg';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const diagnostic = searchParams.get('diagnostic');
-  
-  // Modo diagnóstico
-  if (diagnostic === 'true') {
-    return await runDiagnostic();
-  }
-  
   try {
+    const { searchParams } = new URL(request.url);
+    const diagnostic = searchParams.get('diagnostic');
+    
+    // Modo diagnóstico - executar antes de qualquer verificação de auth
+    if (diagnostic === 'true') {
+      return await runDiagnostic();
+    }
+    
     // Verificar se existe cookie de sessão
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
