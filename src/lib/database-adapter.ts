@@ -30,8 +30,8 @@ export interface Product {
 // Detectar ambiente
 const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
 
-// Importar o banco apropriado
-let db: {
+// Interface do banco de dados
+type DatabaseInterface = {
   initDatabase?: () => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createUser?: (userData: any) => Promise<User>;
