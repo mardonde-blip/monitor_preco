@@ -73,13 +73,14 @@ async function runDiagnostic() {
       vercelUrl: process.env.VERCEL_URL
     };
 
-    // Se não tiver DATABASE_URL, retorna erro específico
+    // Se não tiver DATABASE_URL, retorna informação sem erro
     if (!process.env.DATABASE_URL) {
       return NextResponse.json({
         success: false,
         error: 'DATABASE_URL não configurada',
+        message: 'Ambiente local sem DATABASE_URL - isso é normal em desenvolvimento',
         envInfo
-      }, { status: 500 });
+      }, { status: 200 });
     }
 
     // Teste de conexão PostgreSQL
