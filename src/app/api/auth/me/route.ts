@@ -122,7 +122,7 @@ async function runDiagnostic() {
       success: false,
       error: 'Erro na conexão com PostgreSQL',
       errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
-      errorCode: (error as any)?.code,
+      errorCode: (error as { code?: string })?.code,
       envInfo: {
         timestamp,
         nodeEnv: process.env.NODE_ENV,

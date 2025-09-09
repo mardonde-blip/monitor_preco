@@ -31,26 +31,24 @@ export interface Product {
 const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
 
 // Interface do banco de dados
-type DatabaseInterface = {
-  initDatabase?: () => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createUser?: (userData: any) => Promise<User>;
-  getUserByEmail?: (email: string) => Promise<User | null>;
-  getUserById?: (id: number) => Promise<User | null>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createProduct?: (productData: any) => Promise<Product>;
-  getAllProducts?: (userId?: number) => Promise<Product[]>;
-  getProductById?: (id: number) => Promise<Product | null>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateProduct?: (id: number, userId: number, updateData: any) => Promise<void>;
-  deleteProduct?: (id: number, userId: number) => Promise<void>;
-  getSetting?: (key: string) => Promise<string | null>;
-  setSetting?: (key: string, value: string) => Promise<void>;
-};
+interface DatabaseInterface {
+  initDatabase: () => Promise<void>;
+  createUser: (userData: unknown) => Promise<unknown>;
+  getUserByEmail: (email: string) => Promise<unknown>;
+  createProduct: (productData: unknown) => Promise<unknown>;
+  getProductsByUserId: (userId: number) => Promise<unknown[]>;
+  updateProductPrice: (id: number, price: number) => Promise<unknown>;
+  updateProduct: (id: number, data: unknown) => Promise<unknown>;
+  deleteProduct: (id: number) => Promise<unknown>;
+  getTelegramConfig: (userId: number) => Promise<unknown>;
+  saveTelegramConfig: (config: unknown) => Promise<unknown>;
+  getSetting: (key: string) => Promise<unknown>;
+  setSetting: (key: string, value: string) => Promise<unknown>;
+}
 
 // Inicializar o banco apropriado
-let db: any = null;
-let dbPromise: Promise<any>;
+let db: DatabaseInterface | null = null;
+let dbPromise: Promise<DatabaseInterface>;
 
 if (process.env.NODE_ENV === 'production') {
   // Usar PostgreSQL em produção
@@ -79,15 +77,15 @@ if (process.env.NODE_ENV === 'production') {
     // SQLite exporta instâncias de classes
     return {
       initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
-      createUser: (userData: any) => module.userDb.create(userData),
+      createUser: (userData: unknown) => module.userDb.create(userData),
       getUserByEmail: (email: string) => module.userDb.getByEmail(email),
-      createProduct: (productData: any) => module.productDb.create(productData),
+      createProduct: (productData: unknown) => module.productDb.create(productData),
       getProductsByUserId: (userId: number) => module.productDb.getByUserId(userId),
       updateProductPrice: (id: number, price: number) => module.productDb.updatePrice(id, price),
-      updateProduct: (id: number, data: any) => module.productDb.update(id, data),
+      updateProduct: (id: number, data: unknown) => module.productDb.update(id, data),
       deleteProduct: (id: number) => module.productDb.delete(id),
       getTelegramConfig: (userId: number) => module.telegramConfigDb.getByUserId(userId),
-      saveTelegramConfig: (config: any) => module.telegramConfigDb.save(config),
+      saveTelegramConfig: (config: unknown) => module.telegramConfigDb.save(config),
       getSetting: (key: string) => module.adminDb.getSetting(key),
       setSetting: (key: string, value: string) => module.adminDb.setSetting(key, value)
     };

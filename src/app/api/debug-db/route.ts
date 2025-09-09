@@ -43,7 +43,7 @@ export async function GET() {
         timestamp: new Date().toISOString()
       });
       
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       console.error('❌ Erro na conexão PostgreSQL:', dbError);
       return NextResponse.json({
         success: false,
@@ -54,7 +54,7 @@ export async function GET() {
       }, { status: 500 });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Erro geral no diagnóstico:', error);
     return NextResponse.json({
       success: false,

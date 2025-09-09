@@ -2,8 +2,16 @@
 
 import { useState } from 'react';
 
+interface TesteResult {
+  endpoint: string;
+  status: number;
+  ok: boolean;
+  data: unknown;
+  error?: string;
+}
+
 export default function DiagnosticoPage() {
-  const [resultado, setResultado] = useState<any>(null);
+  const [resultado, setResultado] = useState<TesteResult[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testarEndpoints = async () => {
@@ -157,7 +165,7 @@ export default function DiagnosticoPage() {
             </div>
 
             <div className="space-y-4">
-              {resultado.testes.map((teste: any, index: number) => (
+              {resultado.map((teste: TesteResult, index: number) => (
                 <div key={index} className={`p-4 rounded border-l-4 ${
                   teste.ok ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
                 }`}>
