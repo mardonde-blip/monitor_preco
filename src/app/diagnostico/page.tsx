@@ -46,7 +46,43 @@ export default function DiagnosticoPage() {
       });
     }
 
-    // Teste 3: Init DB
+    // Teste 3: System Check (novo endpoint)
+    try {
+      const response = await fetch('/api/system-check');
+      testes.push({
+        endpoint: '/api/system-check',
+        status: response.status,
+        ok: response.ok,
+        data: response.ok ? await response.json() : await response.text()
+      });
+    } catch (error) {
+      testes.push({
+        endpoint: '/api/system-check',
+        status: 'ERROR',
+        ok: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+
+    // Teste 4: Auth Me com diagnóstico
+    try {
+      const response = await fetch('/api/auth/me?diagnostic=true');
+      testes.push({
+        endpoint: '/api/auth/me?diagnostic=true',
+        status: response.status,
+        ok: response.ok,
+        data: response.ok ? await response.json() : await response.text()
+      });
+    } catch (error) {
+      testes.push({
+        endpoint: '/api/auth/me?diagnostic=true',
+        status: 'ERROR',
+        ok: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+
+    // Teste 5: Init DB
     try {
       const response = await fetch('/api/init-db');
       testes.push({
