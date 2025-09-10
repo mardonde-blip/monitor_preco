@@ -170,12 +170,24 @@ export function getDatabaseInfo() {
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
   static async initDatabase() {
-    // Aguardar carregamento do módulo do banco
-    const dbModule = await dbPromise;
-    if (!dbModule || typeof dbModule.initDatabase !== 'function') {
-      throw new Error('Database module not properly loaded or initDatabase method not available');
+    console.log('🔧 DatabaseAdapter.initDatabase() chamado');
+    try {
+      // Usar getDatabase() que já implementa o fallback
+      const dbModule = await getDatabase();
+      console.log('✅ Módulo do banco obtido via getDatabase()');
+      
+      if (!dbModule || typeof dbModule.initDatabase !== 'function') {
+        throw new Error('Database module not properly loaded or initDatabase method not available');
+      }
+      
+      console.log('🚀 Executando initDatabase()...');
+      const result = await dbModule.initDatabase();
+      console.log('✅ initDatabase() executado com sucesso');
+      return result;
+    } catch (error) {
+      console.error('❌ Erro em DatabaseAdapter.initDatabase():', error);
+      throw error;
     }
-    return await dbModule.initDatabase();
   }
 
   static async createUser(userData: {
