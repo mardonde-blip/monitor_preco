@@ -53,9 +53,15 @@ let dbPromise: Promise<DatabaseInterface>;
 if (process.env.NODE_ENV === 'production') {
   // Usar PostgreSQL em produção
   console.log('🐘 Usando PostgreSQL (Produção)');
+  console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
+  console.log('DATABASE_URL prefix:', process.env.DATABASE_URL?.substring(0, 20));
+  
   dbPromise = import('./database-postgres').then(module => {
+    console.log('✅ Módulo PostgreSQL carregado com sucesso');
+    console.log('Funções disponíveis:', Object.keys(module));
+    
     // PostgreSQL exporta funções diretamente
-    return {
+    const adapter = {
       initDatabase: module.initDatabase,
       createUser: module.createUser,
       getUserByEmail: module.getUserByEmail,
@@ -69,6 +75,12 @@ if (process.env.NODE_ENV === 'production') {
       getSetting: module.getSetting,
       setSetting: module.setSetting
     };
+    
+    console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));
+    return adapter;
+  }).catch(error => {
+    console.error('❌ Erro ao carregar módulo PostgreSQL:', error);
+    throw error;
   });
 } else {
   // Usar SQLite localmente
@@ -94,10 +106,41 @@ if (process.env.NODE_ENV === 'production') {
 
 // Aguardar inicialização do banco
 dbPromise.then(dbModule => {
+  console.log('✅ Database adapter inicializado com sucesso');
+  console.log('Métodos disponíveis:', Object.keys(dbModule));
   db = dbModule;
 }).catch(error => {
   console.error('❌ Erro ao carregar módulo do banco:', error);
+  console.error('Stack trace:', error.stack);
 });
+
+// Função para obter instância do banco
+export async function getDatabase(): Promise<DatabaseInterface> {
+  try {
+    console.log('🔍 Obtendo instância do banco de dados...');
+    
+    if (!db) {
+      console.log('⏳ Aguardando inicialização do banco...');
+      db = await dbPromise;
+      console.log('✅ Banco inicializado:', !!db);
+    }
+    
+    if (!db) {
+      throw new Error('Database instance is null after initialization');
+    }
+    
+    // Verificar se os métodos essenciais existem
+    if (!db.initDatabase) {
+      throw new Error('Database not properly initialized - method initDatabase not available');
+    }
+    
+    console.log('✅ Instância do banco obtida com sucesso');
+    return db;
+  } catch (error) {
+    console.error('❌ Erro ao obter instância do banco:', error);
+    throw error;
+  }
+}
 
 // Interface unificada para ambos os bancos
 export class DatabaseAdapter {
