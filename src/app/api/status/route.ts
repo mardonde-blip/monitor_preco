@@ -16,7 +16,7 @@ export async function GET() {
     await db.initDatabase();
     
     // Tentar buscar usuários para testar leitura
-    let userCount = 0;
+    const userCount = 0;
     try {
       // Isso só funciona se já existirem usuários
       const users = await db.getUserByEmail('test@example.com');

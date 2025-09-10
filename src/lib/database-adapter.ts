@@ -54,42 +54,42 @@ let usingFallback = false;
 // Função para criar adapter SQLite
 async function createSQLiteAdapter(): Promise<DatabaseInterface> {
   console.log('🗃️ Carregando SQLite...');
-  const module = await import('./database');
+  const dbModule = await import('./database');
   return {
     initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
-    createUser: (userData: unknown) => module.userDb.create(userData),
-    getUserByEmail: (email: string) => module.userDb.getByEmail(email),
-    createProduct: (productData: unknown) => module.productDb.create(productData),
-    getProductsByUserId: (userId: number) => module.productDb.getByUserId(userId),
-    updateProductPrice: (id: number, price: number) => module.productDb.updatePrice(id, price),
-    updateProduct: (id: number, data: unknown) => module.productDb.update(id, data),
-    deleteProduct: (id: number) => module.productDb.delete(id),
-    getTelegramConfig: (userId: number) => module.telegramConfigDb.getByUserId(userId),
-    saveTelegramConfig: (config: unknown) => module.telegramConfigDb.save(config),
-    getSetting: (key: string) => module.adminDb.getSetting(key),
-    setSetting: (key: string, value: string) => module.adminDb.setSetting(key, value)
+    createUser: (userData: unknown) => dbModule.userDb.create(userData),
+    getUserByEmail: (email: string) => dbModule.userDb.getByEmail(email),
+    createProduct: (productData: unknown) => dbModule.productDb.create(productData),
+    getProductsByUserId: (userId: number) => dbModule.productDb.getByUserId(userId),
+    updateProductPrice: (id: number, price: number) => dbModule.productDb.updatePrice(id, price),
+    updateProduct: (id: number, data: unknown) => dbModule.productDb.update(id, data),
+    deleteProduct: (id: number) => dbModule.productDb.delete(id),
+    getTelegramConfig: (userId: number) => dbModule.telegramConfigDb.getByUserId(userId),
+    saveTelegramConfig: (config: unknown) => dbModule.telegramConfigDb.save(config),
+    getSetting: (key: string) => dbModule.adminDb.getSetting(key),
+    setSetting: (key: string, value: string) => dbModule.adminDb.setSetting(key, value)
   };
 }
 
 // Função para criar adapter PostgreSQL
 async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
   console.log('🐘 Carregando PostgreSQL...');
-  const module = await import('./database-postgres');
-  console.log('✅ Módulo PostgreSQL carregado:', Object.keys(module));
+  const pgModule = await import('./database-postgres');
+  console.log('✅ Módulo PostgreSQL carregado:', Object.keys(pgModule));
   
   const adapter = {
-    initDatabase: module.initDatabase,
-    createUser: module.createUser,
-    getUserByEmail: module.getUserByEmail,
-    createProduct: module.createProduct,
-    getProductsByUserId: module.getProductsByUserId,
-    updateProductPrice: module.updateProductPrice,
-    updateProduct: module.updateProduct,
-    deleteProduct: module.deleteProduct,
-    getTelegramConfig: module.getTelegramConfig,
-    saveTelegramConfig: module.saveTelegramConfig,
-    getSetting: module.getSetting,
-    setSetting: module.setSetting
+    initDatabase: pgModule.initDatabase,
+    createUser: pgModule.createUser,
+    getUserByEmail: pgModule.getUserByEmail,
+    createProduct: pgModule.createProduct,
+    getProductsByUserId: pgModule.getProductsByUserId,
+    updateProductPrice: pgModule.updateProductPrice,
+    updateProduct: pgModule.updateProduct,
+    deleteProduct: pgModule.deleteProduct,
+    getTelegramConfig: pgModule.getTelegramConfig,
+    saveTelegramConfig: pgModule.saveTelegramConfig,
+    getSetting: pgModule.getSetting,
+    setSetting: pgModule.setSetting
   };
   
   console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));
