@@ -49,59 +49,72 @@ interface DatabaseInterface {
 // Inicializar o banco apropriado
 let db: DatabaseInterface | null = null;
 let dbPromise: Promise<DatabaseInterface>;
+let usingFallback = false;
+
+// Função para criar adapter SQLite
+async function createSQLiteAdapter(): Promise<DatabaseInterface> {
+  console.log('🗃️ Carregando SQLite...');
+  const module = await import('./database');
+  return {
+    initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
+    createUser: (userData: unknown) => module.userDb.create(userData),
+    getUserByEmail: (email: string) => module.userDb.getByEmail(email),
+    createProduct: (productData: unknown) => module.productDb.create(productData),
+    getProductsByUserId: (userId: number) => module.productDb.getByUserId(userId),
+    updateProductPrice: (id: number, price: number) => module.productDb.updatePrice(id, price),
+    updateProduct: (id: number, data: unknown) => module.productDb.update(id, data),
+    deleteProduct: (id: number) => module.productDb.delete(id),
+    getTelegramConfig: (userId: number) => module.telegramConfigDb.getByUserId(userId),
+    saveTelegramConfig: (config: unknown) => module.telegramConfigDb.save(config),
+    getSetting: (key: string) => module.adminDb.getSetting(key),
+    setSetting: (key: string, value: string) => module.adminDb.setSetting(key, value)
+  };
+}
+
+// Função para criar adapter PostgreSQL
+async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
+  console.log('🐘 Carregando PostgreSQL...');
+  const module = await import('./database-postgres');
+  console.log('✅ Módulo PostgreSQL carregado:', Object.keys(module));
+  
+  const adapter = {
+    initDatabase: module.initDatabase,
+    createUser: module.createUser,
+    getUserByEmail: module.getUserByEmail,
+    createProduct: module.createProduct,
+    getProductsByUserId: module.getProductsByUserId,
+    updateProductPrice: module.updateProductPrice,
+    updateProduct: module.updateProduct,
+    deleteProduct: module.deleteProduct,
+    getTelegramConfig: module.getTelegramConfig,
+    saveTelegramConfig: module.saveTelegramConfig,
+    getSetting: module.getSetting,
+    setSetting: module.setSetting
+  };
+  
+  console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));
+  return adapter;
+}
 
 if (process.env.NODE_ENV === 'production') {
-  // Usar PostgreSQL em produção
-  console.log('🐘 Usando PostgreSQL (Produção)');
+  // Tentar PostgreSQL primeiro, com fallback para SQLite
+  console.log('🚀 Ambiente de produção detectado');
   console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
   console.log('DATABASE_URL prefix:', process.env.DATABASE_URL?.substring(0, 20));
   
-  dbPromise = import('./database-postgres').then(module => {
-    console.log('✅ Módulo PostgreSQL carregado com sucesso');
-    console.log('Funções disponíveis:', Object.keys(module));
-    
-    // PostgreSQL exporta funções diretamente
-    const adapter = {
-      initDatabase: module.initDatabase,
-      createUser: module.createUser,
-      getUserByEmail: module.getUserByEmail,
-      createProduct: module.createProduct,
-      getProductsByUserId: module.getProductsByUserId,
-      updateProductPrice: module.updateProductPrice,
-      updateProduct: module.updateProduct,
-      deleteProduct: module.deleteProduct,
-      getTelegramConfig: module.getTelegramConfig,
-      saveTelegramConfig: module.saveTelegramConfig,
-      getSetting: module.getSetting,
-      setSetting: module.setSetting
-    };
-    
-    console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));
-    return adapter;
-  }).catch(error => {
-    console.error('❌ Erro ao carregar módulo PostgreSQL:', error);
-    throw error;
+  dbPromise = createPostgreSQLAdapter().catch(postgresError => {
+    console.error('❌ Falha no PostgreSQL:', postgresError);
+    console.log('🔄 Tentando fallback para SQLite...');
+    usingFallback = true;
+    return createSQLiteAdapter().then(adapter => {
+      console.log('✅ Fallback SQLite ativado com sucesso!');
+      return adapter;
+    });
   });
 } else {
   // Usar SQLite localmente
-  console.log('🗃️ Usando SQLite (Local)');
-  dbPromise = import('./database').then(module => {
-    // SQLite exporta instâncias de classes
-    return {
-      initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
-      createUser: (userData: unknown) => module.userDb.create(userData),
-      getUserByEmail: (email: string) => module.userDb.getByEmail(email),
-      createProduct: (productData: unknown) => module.productDb.create(productData),
-      getProductsByUserId: (userId: number) => module.productDb.getByUserId(userId),
-      updateProductPrice: (id: number, price: number) => module.productDb.updatePrice(id, price),
-      updateProduct: (id: number, data: unknown) => module.productDb.update(id, data),
-      deleteProduct: (id: number) => module.productDb.delete(id),
-      getTelegramConfig: (userId: number) => module.telegramConfigDb.getByUserId(userId),
-      saveTelegramConfig: (config: unknown) => module.telegramConfigDb.save(config),
-      getSetting: (key: string) => module.adminDb.getSetting(key),
-      setSetting: (key: string, value: string) => module.adminDb.setSetting(key, value)
-    };
-  });
+  console.log('🏠 Ambiente local - usando SQLite');
+  dbPromise = createSQLiteAdapter();
 }
 
 // Aguardar inicialização do banco
@@ -123,6 +136,7 @@ export async function getDatabase(): Promise<DatabaseInterface> {
       console.log('⏳ Aguardando inicialização do banco...');
       db = await dbPromise;
       console.log('✅ Banco inicializado:', !!db);
+      console.log('📊 Usando fallback SQLite:', usingFallback);
     }
     
     if (!db) {
@@ -135,11 +149,22 @@ export async function getDatabase(): Promise<DatabaseInterface> {
     }
     
     console.log('✅ Instância do banco obtida com sucesso');
+    console.log('🎯 Tipo de banco:', usingFallback ? 'SQLite (Fallback)' : (process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'));
     return db;
   } catch (error) {
     console.error('❌ Erro ao obter instância do banco:', error);
     throw error;
   }
+}
+
+// Função para verificar qual banco está sendo usado
+export function getDatabaseInfo() {
+  return {
+    environment: process.env.NODE_ENV,
+    usingFallback,
+    databaseType: usingFallback ? 'SQLite (Fallback)' : (process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'),
+    hasPostgresUrl: !!process.env.DATABASE_URL
+  };
 }
 
 // Interface unificada para ambos os bancos
