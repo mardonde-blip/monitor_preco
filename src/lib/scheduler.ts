@@ -3,7 +3,8 @@ import { PriceScraper } from './scraper';
 import { TelegramNotifier } from './telegram';
 import { LocalStorage } from './storage';
 import { Product, NotificationSettings } from '../types';
-import { productDb, MonitoredProduct } from './database';
+import { getDatabase } from './database-adapter';
+import { MonitoredProduct } from '../types';
 import { sendEmail, emailTemplates } from './email';
 
 export class PriceMonitorScheduler {
@@ -74,7 +75,8 @@ export class PriceMonitorScheduler {
       this.lastRun = new Date().toISOString();
       console.log('Iniciando ciclo de monitoramento...', this.lastRun);
       
-      const products = productDb.getAllActive();
+      const db = await getDatabase();
+      const products = await db.getAllProducts();
       const notificationSettings = await this.getNotificationSettings();
       
       if (!products.length) {
@@ -309,13 +311,14 @@ export class PriceMonitorScheduler {
   private async updateProductViaAPI(product: Product): Promise<void> {
     try {
       // Buscar o produto original para obter o user_id
-      const originalProduct = productDb.getById(parseInt(product.id));
+      const db = await getDatabase();
+      const originalProduct = await db.getProductById(parseInt(product.id));
       if (!originalProduct) {
         throw new Error(`Produto com ID ${product.id} não encontrado`);
       }
       
       // Usar diretamente o banco de dados em vez da API para evitar problemas de autenticação
-      productDb.update(parseInt(product.id), originalProduct.user_id, {
+      await db.updateProduct(parseInt(product.id), originalProduct.user_id, {
         name: product.name,
         url: product.url,
         target_price: product.targetPrice || 0,
