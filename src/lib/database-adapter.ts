@@ -54,21 +54,50 @@ let usingFallback = false;
 // Função para criar adapter SQLite
 async function createSQLiteAdapter(): Promise<DatabaseInterface> {
   console.log('🗃️ Carregando SQLite...');
-  const dbModule = await import('./database');
-  return {
-    initDatabase: () => Promise.resolve(), // SQLite não precisa de inicialização
-    createUser: (userData: unknown) => dbModule.userDb.create(userData),
-    getUserByEmail: (email: string) => dbModule.userDb.getByEmail(email),
-    createProduct: (productData: unknown) => dbModule.productDb.create(productData),
-    getProductsByUserId: (userId: number) => dbModule.productDb.getByUserId(userId),
-    updateProductPrice: (id: number, price: number) => dbModule.productDb.updatePrice(id, price),
-    updateProduct: (id: number, data: unknown) => dbModule.productDb.update(id, data),
-    deleteProduct: (id: number) => dbModule.productDb.delete(id),
-    getTelegramConfig: (userId: number) => dbModule.telegramConfigDb.getByUserId(userId),
-    saveTelegramConfig: (config: unknown) => dbModule.telegramConfigDb.save(config),
-    getSetting: (key: string) => dbModule.adminDb.getSetting(key),
-    setSetting: (key: string, value: string) => dbModule.adminDb.setSetting(key, value)
-  };
+  
+  try {
+    const dbModule = await import('./database');
+    console.log('✅ Módulo SQLite carregado:', Object.keys(dbModule));
+    
+    // Verificar se as instâncias existem
+    if (!dbModule.userDb || !dbModule.productDb || !dbModule.telegramConfigDb || !dbModule.adminDb) {
+      throw new Error('SQLite database instances not properly initialized');
+    }
+    
+    const adapter = {
+      initDatabase: async () => {
+        console.log('🔧 Inicializando SQLite (verificação de integridade)...');
+        // SQLite já é inicializado na importação, mas vamos verificar se está funcionando
+        try {
+          // Teste simples para verificar se o banco está funcionando
+          const testQuery = dbModule.adminDb.getSetting('test_key');
+          console.log('✅ SQLite funcionando corretamente');
+          return Promise.resolve();
+        } catch (error) {
+          console.error('❌ Erro na verificação do SQLite:', error);
+          throw error;
+        }
+      },
+      createUser: (userData: unknown) => dbModule.userDb.create(userData),
+      getUserByEmail: (email: string) => dbModule.userDb.getByEmail(email),
+      createProduct: (productData: unknown) => dbModule.productDb.create(productData),
+      getProductsByUserId: (userId: number) => dbModule.productDb.getByUserId(userId),
+      updateProductPrice: (id: number, price: number) => dbModule.productDb.updatePrice(id, price),
+      updateProduct: (id: number, data: unknown) => dbModule.productDb.update(id, data),
+      deleteProduct: (id: number) => dbModule.productDb.delete(id),
+      getTelegramConfig: (userId: number) => dbModule.telegramConfigDb.getByUserId(userId),
+      saveTelegramConfig: (config: unknown) => dbModule.telegramConfigDb.save(config),
+      getSetting: (key: string) => dbModule.adminDb.getSetting(key),
+      setSetting: (key: string, value: string) => dbModule.adminDb.setSetting(key, value)
+    };
+    
+    console.log('✅ Adapter SQLite criado:', Object.keys(adapter));
+    return adapter;
+    
+  } catch (error) {
+    console.error('❌ Erro ao criar adapter SQLite:', error);
+    throw error;
+  }
 }
 
 // Função para criar adapter PostgreSQL
