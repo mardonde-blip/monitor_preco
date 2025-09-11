@@ -160,12 +160,21 @@ dbPromise.then(dbModule => {
 export async function getDatabase(): Promise<DatabaseInterface> {
   try {
     console.log('🔍 Obtendo instância do banco de dados...');
+    console.log('🔧 Estado atual - db existe:', !!db);
+    console.log('🔧 Estado atual - usingFallback:', usingFallback);
+    console.log('🔧 Estado atual - NODE_ENV:', process.env.NODE_ENV);
     
     if (!db) {
       console.log('⏳ Aguardando inicialização do banco...');
       db = await dbPromise;
       console.log('✅ Banco inicializado:', !!db);
       console.log('📊 Usando fallback SQLite:', usingFallback);
+      
+      if (db) {
+        console.log('🔍 Métodos disponíveis no adapter:', Object.keys(db));
+        console.log('🔍 Tipo do método initDatabase:', typeof db.initDatabase);
+        console.log('🔍 initDatabase é função:', typeof db.initDatabase === 'function');
+      }
     }
     
     if (!db) {
@@ -174,6 +183,10 @@ export async function getDatabase(): Promise<DatabaseInterface> {
     
     // Verificar se os métodos essenciais existem
     if (!db.initDatabase) {
+      console.error('❌ DEBUG: Adapter sem initDatabase');
+      console.error('❌ DEBUG: Métodos disponíveis:', Object.keys(db));
+      console.error('❌ DEBUG: Tipo do objeto db:', typeof db);
+      console.error('❌ DEBUG: Constructor do db:', db.constructor.name);
       throw new Error('Database not properly initialized - method initDatabase not available');
     }
     
