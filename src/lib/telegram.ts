@@ -1,6 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { TelegramConfig, Product } from '@/types';
-import { MonitoredProduct, telegramConfigDb, UserTelegramConfig } from './database';
+import { getDatabase } from './database-adapter';
+import { MonitoredProduct } from '../types';
 
 export class TelegramNotifier {
   private bot: TelegramBot | null = null;
@@ -140,7 +141,8 @@ export class TelegramNotifier {
   ): Promise<void> {
     try {
       // Buscar configuração do usuário
-      const userConfig = telegramConfigDb.getByUserId(userId);
+      const db = await getDatabase();
+      const userConfig = await db.getTelegramConfigByUserId(userId);
       
       if (!userConfig || !userConfig.is_enabled) {
         console.log(`Notificações do Telegram desabilitadas para usuário ${userId}`);
@@ -209,7 +211,8 @@ export class TelegramNotifier {
   // Enviar resumo diário para usuário
   async sendDailySummary(userId: number, products: MonitoredProduct[]): Promise<void> {
     try {
-      const userConfig = telegramConfigDb.getByUserId(userId);
+      const db = await getDatabase();
+      const userConfig = await db.getTelegramConfigByUserId(userId);
       
       if (!userConfig || !userConfig.is_enabled || !userConfig.notification_settings.daily_summary) {
         return;
@@ -251,7 +254,8 @@ export class TelegramNotifier {
 
   // Testar configuração de usuário específico
   async testUserConfiguration(userId: number): Promise<void> {
-    const userConfig = telegramConfigDb.getByUserId(userId);
+    const db = await getDatabase();
+    const userConfig = await db.getTelegramConfigByUserId(userId);
     
     if (!userConfig) {
       throw new Error('Configuração não encontrada para este usuário');
