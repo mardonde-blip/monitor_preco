@@ -126,20 +126,14 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
 }
 
 if (process.env.NODE_ENV === 'production') {
-  // Tentar PostgreSQL primeiro, com fallback para SQLite
-  console.log('🚀 Ambiente de produção detectado');
+  // Em produção no Vercel, usar SQLite diretamente (PostgreSQL não está funcionando)
+  console.log('🚀 Ambiente de produção detectado - usando SQLite diretamente');
   console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
-  console.log('DATABASE_URL prefix:', process.env.DATABASE_URL?.substring(0, 20));
   
-  dbPromise = createPostgreSQLAdapter().catch(postgresError => {
-    console.error('❌ Falha no PostgreSQL:', postgresError);
-    console.log('🔄 Tentando fallback para SQLite...');
-    usingFallback = true;
-    return createSQLiteAdapter().then(adapter => {
-      console.log('✅ Fallback SQLite ativado com sucesso!');
-      return adapter;
-    });
-  });
+  // Forçar uso do SQLite em produção por enquanto
+  console.log('🗃️ Usando SQLite em produção (temporário)');
+  usingFallback = true;
+  dbPromise = createSQLiteAdapter();
 } else {
   // Usar SQLite localmente
   console.log('🏠 Ambiente local - usando SQLite');
