@@ -1,4 +1,4 @@
-// Adaptador de banco de dados que funciona tanto local (SQLite) quanto produção (PostgreSQL)
+// Adaptador de banco de dados PostgreSQL
 
 // Tipos compartilhados
 export interface User {
@@ -27,78 +27,26 @@ export interface Product {
   updated_at: string;
 }
 
-// Detectar ambiente
-const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
-
 // Interface do banco de dados
 interface DatabaseInterface {
   initDatabase: () => Promise<void>;
   createUser: (userData: unknown) => Promise<unknown>;
   getUserByEmail: (email: string) => Promise<unknown>;
+  getUserById: (id: number) => Promise<unknown>;
   createProduct: (productData: unknown) => Promise<unknown>;
   getProductsByUserId: (userId: number) => Promise<unknown[]>;
   updateProductPrice: (id: number, price: number) => Promise<unknown>;
   updateProduct: (id: number, data: unknown) => Promise<unknown>;
-  deleteProduct: (id: number) => Promise<unknown>;
-  getTelegramConfig: (userId: number) => Promise<unknown>;
-  saveTelegramConfig: (config: unknown) => Promise<unknown>;
+  deleteProduct: (id: number, userId: number) => Promise<unknown>;
+  getProductById: (id: number) => Promise<unknown>;
+  getAllProducts: () => Promise<unknown[]>;
   getSetting: (key: string) => Promise<unknown>;
   setSetting: (key: string, value: string) => Promise<unknown>;
 }
 
-// Inicializar o banco apropriado
+// Inicializar o banco PostgreSQL
 let db: DatabaseInterface | null = null;
 let dbPromise: Promise<DatabaseInterface>;
-let usingFallback = false;
-
-// Função para criar adapter SQLite
-async function createSQLiteAdapter(): Promise<DatabaseInterface> {
-  console.log('🗃️ Carregando SQLite...');
-  
-  try {
-    const dbModule = await import('./database');
-    console.log('✅ Módulo SQLite carregado:', Object.keys(dbModule));
-    
-    // Verificar se as instâncias existem
-    if (!dbModule.userDb || !dbModule.productDb || !dbModule.telegramConfigDb || !dbModule.adminDb) {
-      throw new Error('SQLite database instances not properly initialized');
-    }
-    
-    const adapter = {
-      initDatabase: async () => {
-        console.log('🔧 Inicializando SQLite (verificação de integridade)...');
-        // SQLite já é inicializado na importação, mas vamos verificar se está funcionando
-        try {
-          // Teste simples para verificar se o banco está funcionando
-          const testQuery = dbModule.adminDb.getSetting('test_key');
-          console.log('✅ SQLite funcionando corretamente');
-          return Promise.resolve();
-        } catch (error) {
-          console.error('❌ Erro na verificação do SQLite:', error);
-          throw error;
-        }
-      },
-      createUser: (userData: unknown) => dbModule.userDb.create(userData),
-      getUserByEmail: (email: string) => dbModule.userDb.getByEmail(email),
-      createProduct: (productData: unknown) => dbModule.productDb.create(productData),
-      getProductsByUserId: (userId: number) => dbModule.productDb.getByUserId(userId),
-      updateProductPrice: (id: number, price: number) => dbModule.productDb.updatePrice(id, price),
-      updateProduct: (id: number, data: unknown) => dbModule.productDb.update(id, data),
-      deleteProduct: (id: number) => dbModule.productDb.delete(id),
-      getTelegramConfig: (userId: number) => dbModule.telegramConfigDb.getByUserId(userId),
-      saveTelegramConfig: (config: unknown) => dbModule.telegramConfigDb.save(config),
-      getSetting: (key: string) => dbModule.adminDb.getSetting(key),
-      setSetting: (key: string, value: string) => dbModule.adminDb.setSetting(key, value)
-    };
-    
-    console.log('✅ Adapter SQLite criado:', Object.keys(adapter));
-    return adapter;
-    
-  } catch (error) {
-    console.error('❌ Erro ao criar adapter SQLite:', error);
-    throw error;
-  }
-}
 
 // Função para criar adapter PostgreSQL
 async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
@@ -110,13 +58,14 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
     initDatabase: pgModule.initDatabase,
     createUser: pgModule.createUser,
     getUserByEmail: pgModule.getUserByEmail,
+    getUserById: pgModule.getUserById,
     createProduct: pgModule.createProduct,
     getProductsByUserId: pgModule.getProductsByUserId,
     updateProductPrice: pgModule.updateProductPrice,
     updateProduct: pgModule.updateProduct,
     deleteProduct: pgModule.deleteProduct,
-    getTelegramConfig: pgModule.getTelegramConfig,
-    saveTelegramConfig: pgModule.saveTelegramConfig,
+    getProductById: pgModule.getProductById,
+    getAllProducts: pgModule.getAllProducts,
     getSetting: pgModule.getSetting,
     setSetting: pgModule.setSetting
   };
@@ -125,44 +74,31 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
   return adapter;
 }
 
-if (process.env.NODE_ENV === 'production') {
-  // Em produção no Vercel, usar SQLite diretamente (PostgreSQL não está funcionando)
-  console.log('🚀 Ambiente de produção detectado - usando SQLite diretamente');
-  console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
-  
-  // Forçar uso do SQLite em produção por enquanto
-  console.log('🗃️ Usando SQLite em produção (temporário)');
-  usingFallback = true;
-  dbPromise = createSQLiteAdapter();
-} else {
-  // Usar SQLite localmente
-  console.log('🏠 Ambiente local - usando SQLite');
-  dbPromise = createSQLiteAdapter();
-}
+// Usar PostgreSQL em todos os ambientes
+console.log('🐘 Usando PostgreSQL exclusivamente');
+dbPromise = createPostgreSQLAdapter();
 
 // Aguardar inicialização do banco
 dbPromise.then(dbModule => {
-  console.log('✅ Database adapter inicializado com sucesso');
+  console.log('✅ Database adapter PostgreSQL inicializado com sucesso');
   console.log('Métodos disponíveis:', Object.keys(dbModule));
   db = dbModule;
 }).catch(error => {
-  console.error('❌ Erro ao carregar módulo do banco:', error);
+  console.error('❌ Erro ao carregar módulo PostgreSQL:', error);
   console.error('Stack trace:', error.stack);
 });
 
 // Função para obter instância do banco
 export async function getDatabase(): Promise<DatabaseInterface> {
   try {
-    console.log('🔍 Obtendo instância do banco de dados...');
+    console.log('🔍 Obtendo instância do PostgreSQL...');
     console.log('🔧 Estado atual - db existe:', !!db);
-    console.log('🔧 Estado atual - usingFallback:', usingFallback);
     console.log('🔧 Estado atual - NODE_ENV:', process.env.NODE_ENV);
     
     if (!db) {
-      console.log('⏳ Aguardando inicialização do banco...');
+      console.log('⏳ Aguardando inicialização do PostgreSQL...');
       db = await dbPromise;
-      console.log('✅ Banco inicializado:', !!db);
-      console.log('📊 Usando fallback SQLite:', usingFallback);
+      console.log('✅ PostgreSQL inicializado:', !!db);
       
       if (db) {
         console.log('🔍 Métodos disponíveis no adapter:', Object.keys(db));
@@ -172,23 +108,23 @@ export async function getDatabase(): Promise<DatabaseInterface> {
     }
     
     if (!db) {
-      throw new Error('Database instance is null after initialization');
+      throw new Error('PostgreSQL instance is null after initialization');
     }
     
     // Verificar se os métodos essenciais existem
     if (!db.initDatabase) {
-      console.error('❌ DEBUG: Adapter sem initDatabase');
+      console.error('❌ DEBUG: Adapter PostgreSQL sem initDatabase');
       console.error('❌ DEBUG: Métodos disponíveis:', Object.keys(db));
       console.error('❌ DEBUG: Tipo do objeto db:', typeof db);
       console.error('❌ DEBUG: Constructor do db:', db.constructor.name);
-      throw new Error('Database not properly initialized - method initDatabase not available');
+      throw new Error('PostgreSQL not properly initialized - method initDatabase not available');
     }
     
-    console.log('✅ Instância do banco obtida com sucesso');
-    console.log('🎯 Tipo de banco:', usingFallback ? 'SQLite (Fallback)' : (process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'));
+    console.log('✅ Instância do PostgreSQL obtida com sucesso');
+    console.log('🎯 Tipo de banco: PostgreSQL');
     return db;
   } catch (error) {
-    console.error('❌ Erro ao obter instância do banco:', error);
+    console.error('❌ Erro ao obter instância do PostgreSQL:', error);
     throw error;
   }
 }
@@ -197,8 +133,7 @@ export async function getDatabase(): Promise<DatabaseInterface> {
 export function getDatabaseInfo() {
   return {
     environment: process.env.NODE_ENV,
-    usingFallback,
-    databaseType: usingFallback ? 'SQLite (Fallback)' : (process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'),
+    databaseType: 'PostgreSQL',
     hasPostgresUrl: !!process.env.DATABASE_URL
   };
 }
@@ -234,39 +169,19 @@ export class DatabaseAdapter {
     sexo: string;
     celular: string;
   }): Promise<User> {
-    if (isProduction) {
-      this.checkDb('createUser');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).createUser(userData);
-    } else {
-      if (!db || !db.createUser) throw new Error('Database not initialized');
-      return await db.createUser(userData);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.createUser(userData) as User;
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
-    if (isProduction) {
-      this.checkDb('getUserByEmail');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getUserByEmail(email);
-    } else {
-      if (!db || !db.getUserByEmail) throw new Error('Database not initialized');
-      return await db.getUserByEmail(email);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.getUserByEmail(email) as User | null;
   }
 
   static async getUserById(id: number): Promise<User | null> {
-    if (isProduction) {
-      this.checkDb('getUserById');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getUserById(id);
-    } else {
-      if (!db || !db.getUserById) throw new Error('Database not initialized');
-      return await db.getUserById(id);
-    }
+    const dbInstance = await getDatabase();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return await (dbInstance as any).getUserById(id) as User | null;
   }
 
   static async createProduct(productData: {
@@ -277,104 +192,45 @@ export class DatabaseAdapter {
     current_price?: number;
     store: string;
   }): Promise<Product> {
-    if (isProduction) {
-      this.checkDb('createProduct');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).createProduct(productData);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      return productDb.create(productData);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.createProduct(productData) as Product;
   }
 
   static async getProductsByUserId(userId: number): Promise<Product[]> {
-    if (isProduction) {
-      this.checkDb('getProductsByUserId');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getProductsByUserId(userId);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      return productDb.getByUserId(userId);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.getProductsByUserId(userId) as Product[];
   }
 
   static async updateProductPrice(productId: number, price: number): Promise<Product | null> {
-    if (isProduction) {
-      this.checkDb('updateProductPrice');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).updateProductPrice(productId, price);
-    } else {
-      if (!db || !db.updateProduct || !db.getProductById) throw new Error('Database not initialized');
-      await db.updateProduct(productId, 0, { target_price: price });
-      return await db.getProductById(productId);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.updateProductPrice(productId, price) as Product | null;
   }
 
   static async deleteProduct(productId: number, userId: number): Promise<Product | null> {
-    if (isProduction) {
-      this.checkDb('deleteProduct');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).deleteProduct(productId, userId);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      const deleted = productDb.delete(productId, userId);
-      return deleted ? null : null;
-    }
-  }
+     const dbInstance = await getDatabase();
+     return await dbInstance.deleteProduct(productId, userId) as Product | null;
+   }
 
   static async getSetting(key: string): Promise<string | null> {
-    if (isProduction) {
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getSetting(key);
-    } else {
-      if (!db || !db.getSetting) throw new Error('Database not initialized');
-      return await db.getSetting(key);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.getSetting(key) as string | null;
   }
 
   static async setSetting(key: string, value: string): Promise<void> {
-    if (isProduction) {
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).setSetting(key, value);
-    } else {
-      if (!db || !db.setSetting) throw new Error('Database not initialized');
-      return await db.setSetting(key, value);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.setSetting(key, value);
   }
 
   static async getAllProducts(): Promise<Product[]> {
-    if (isProduction) {
-      this.checkDb('getAllProducts');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getAllProducts();
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      return productDb.getAllActive();
-    }
+    const dbInstance = await getDatabase();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return await (dbInstance as any).getAllProducts() as Product[];
   }
 
   static async getProductById(id: number): Promise<Product | null> {
-    if (isProduction) {
-      this.checkDb('getProductById');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).getProductById(id) || null;
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      return productDb.getById(id);
-    }
+    const dbInstance = await getDatabase();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return await (dbInstance as any).getProductById(id) as Product | null;
   }
 
   static async updateProduct(id: number, userId: number, updateData: {
@@ -383,16 +239,8 @@ export class DatabaseAdapter {
     target_price?: number;
     store?: string;
   }): Promise<Product | null> {
-    if (isProduction) {
-      this.checkDb('updateProduct');
-      if (!db) throw new Error('Database not initialized');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await (db as any).updateProduct(id, userId, updateData) || null;
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { productDb } = require('./database');
-      return productDb.update(id, userId, updateData);
-    }
+    const dbInstance = await getDatabase();
+    return await dbInstance.updateProduct(id, updateData) as Product | null;
   }
 }
 
