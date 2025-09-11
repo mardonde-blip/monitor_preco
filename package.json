@@ -12,12 +12,12 @@
     "@playwright/test": "^1.55.0",
     "@sparticuz/chromium-min": "^138.0.2",
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.13",
+
     "@types/nodemailer": "^7.0.1",
     "@types/pg": "^8.15.5",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.2.0",
+
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
     "lucide-react": "^0.541.0",
@@ -31,7 +31,7 @@
     "puppeteer-core": "^24.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sqlite3": "^5.1.7"
+
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
