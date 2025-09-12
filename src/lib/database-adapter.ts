@@ -46,7 +46,6 @@ interface DatabaseInterface {
 
 // Inicializar o banco PostgreSQL
 let db: DatabaseInterface | null = null;
-let dbPromise: Promise<DatabaseInterface>;
 
 // Função para criar adapter PostgreSQL
 async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
