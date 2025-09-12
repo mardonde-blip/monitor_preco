@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     // Buscar usuário no banco
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = await db.getUserById(parseInt(userId));
     
     if (!user) {
@@ -43,8 +43,11 @@ export async function GET(request: Request) {
       );
     }
 
+    // Cast do tipo para acessar as propriedades
+    const typedUser = user as { id: number; email: string; nome_completo: string; senha: string; [key: string]: any };
+    
     // Retornar dados do usuário (sem senha)
-    const { senha, ...userWithoutPassword } = user;
+    const { senha, ...userWithoutPassword } = typedUser;
     
     return NextResponse.json({
       user: userWithoutPassword

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
-    const db = getDatabase();
+    const db = await getDatabase();
 
     switch (type) {
       case 'system':

@@ -28,11 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário pelo email
-    const db = getDatabase();
-    const users = await db.getAllUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const db = await getDatabase();
+    const userData = await db.getUserByEmail(email.toLowerCase());
 
-    if (!user) {
+    if (!userData) {
       // Por segurança, não revelamos se o email existe ou não
       return NextResponse.json({
         success: true,
@@ -40,9 +39,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Gerar token de reset (válido por 1 hora)
+    // Cast do tipo para acessar as propriedades
+    const user = userData as { id: number; email: string; nome_completo: string };
+
+    // Gerar token de reset
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora
 
     // Salvar token no usuário (simulando - em produção seria no banco de dados)
     // Como não temos campo para isso no banco atual, vamos usar uma estrutura temporária

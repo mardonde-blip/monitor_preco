@@ -42,6 +42,9 @@ interface DatabaseInterface {
   getAllProducts: () => Promise<unknown[]>;
   getSetting: (key: string) => Promise<unknown>;
   setSetting: (key: string, value: string) => Promise<unknown>;
+  getSystemStats: () => Promise<unknown>;
+  getUsersWithProductCounts: () => Promise<unknown[]>;
+  getUserDetailedStats: (userId: number) => Promise<unknown>;
 }
 
 // Inicializar o banco PostgreSQL
@@ -66,7 +69,10 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
     getProductById: pgModule.getProductById,
     getAllProducts: pgModule.getAllProducts,
     getSetting: pgModule.getSetting,
-    setSetting: pgModule.setSetting
+    setSetting: pgModule.setSetting,
+    getSystemStats: pgModule.getSystemStats,
+    getUsersWithProductCounts: pgModule.getUsersWithProductCounts,
+    getUserDetailedStats: pgModule.getUserDetailedStats
   };
   
   console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));

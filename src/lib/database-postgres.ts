@@ -248,4 +248,53 @@ export async function setSetting(key: string, value: string) {
   return result.rows[0];
 }
 
+// Funções de administração
+export async function getSystemStats() {
+  const [usersResult, productsResult, activeProductsResult] = await Promise.all([
+    query('SELECT COUNT(*) as total FROM users'),
+    query('SELECT COUNT(*) as total FROM monitored_products'),
+    query('SELECT COUNT(*) as total FROM monitored_products WHERE is_active = true')
+  ]);
+
+  return {
+    totalUsers: parseInt(usersResult.rows[0].total),
+    totalProducts: parseInt(productsResult.rows[0].total),
+    activeProducts: parseInt(activeProductsResult.rows[0].total)
+  };
+}
+
+export async function getUsersWithProductCounts() {
+  const result = await query(`
+    SELECT 
+      u.id,
+      u.nome_completo,
+      u.email,
+      u.created_at,
+      COUNT(mp.id) as product_count
+    FROM users u
+    LEFT JOIN monitored_products mp ON u.id = mp.user_id AND mp.is_active = true
+    GROUP BY u.id, u.nome_completo, u.email, u.created_at
+    ORDER BY u.created_at DESC
+  `);
+  return result.rows;
+}
+
+export async function getUserDetailedStats(userId: number) {
+  const [userResult, productsResult, activeProductsResult] = await Promise.all([
+    query('SELECT * FROM users WHERE id = $1', [userId]),
+    query('SELECT COUNT(*) as total FROM monitored_products WHERE user_id = $1', [userId]),
+    query('SELECT COUNT(*) as total FROM monitored_products WHERE user_id = $1 AND is_active = true', [userId])
+  ]);
+
+  if (userResult.rows.length === 0) {
+    return null;
+  }
+
+  return {
+    user: userResult.rows[0],
+    totalProducts: parseInt(productsResult.rows[0].total),
+    activeProducts: parseInt(activeProductsResult.rows[0].total)
+  };
+}
+
 export default pool;
