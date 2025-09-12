@@ -76,7 +76,7 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
 
 // Usar PostgreSQL em todos os ambientes
 console.log('🐘 Usando PostgreSQL exclusivamente');
-dbPromise = createPostgreSQLAdapter();
+const dbPromise = createPostgreSQLAdapter();
 
 // Aguardar inicialização do banco
 dbPromise.then(dbModule => {
