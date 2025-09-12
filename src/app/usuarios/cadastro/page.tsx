@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UserForm from '@/components/UserForm';
-import { User } from '@/lib/database';
+import { User } from '@/lib/database-adapter';
 
 export default function CadastroUsuario() {
   const [isLoading, setIsLoading] = useState(false);

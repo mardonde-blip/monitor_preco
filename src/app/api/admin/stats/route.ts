@@ -58,9 +58,10 @@ export async function GET(request: NextRequest) {
 
       default:
         // Retornar todas as estatísticas por padrão
+        const db = getDatabase();
         const allStats = {
-          system: adminDb.getSystemStats(),
-          users: adminDb.getUsersWithProductCounts()
+          system: await db.getSystemStats(),
+          users: await db.getUsersWithProductCounts()
         };
         return NextResponse.json(allStats);
     }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User } from '@/lib/database';
+import { User } from '@/lib/database-adapter';
 
 interface UserFormProps {
   user?: User;

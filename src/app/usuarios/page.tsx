@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@/lib/database';
+import { User } from '@/lib/database-adapter';
 
 interface CurrentUser {
   nome_completo: string;

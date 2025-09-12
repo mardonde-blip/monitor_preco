@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { User } from '@/lib/database';
+import { User } from '@/lib/database-adapter';
 
 export default function DetalhesUsuario() {
   const [user, setUser] = useState<User | null>(null);
