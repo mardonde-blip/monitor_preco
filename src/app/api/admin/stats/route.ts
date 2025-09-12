@@ -21,17 +21,16 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
+    const db = getDatabase();
 
     switch (type) {
       case 'system':
         // Estatísticas gerais do sistema
-        const db = getDatabase();
         const systemStats = await db.getSystemStats();
         return NextResponse.json(systemStats);
 
       case 'users':
         // Lista de usuários com contagem de produtos
-        const db = getDatabase();
         const usersWithProducts = await db.getUsersWithProductCounts();
         return NextResponse.json(usersWithProducts);
 
@@ -45,7 +44,6 @@ export async function GET(request: NextRequest) {
           );
         }
         
-        const db = getDatabase();
         const userDetails = await db.getUserDetailedStats(parseInt(userId));
         if (!userDetails) {
           return NextResponse.json(
@@ -58,7 +56,6 @@ export async function GET(request: NextRequest) {
 
       default:
         // Retornar todas as estatísticas por padrão
-        const db = getDatabase();
         const allStats = {
           system: await db.getSystemStats(),
           users: await db.getUsersWithProductCounts()
