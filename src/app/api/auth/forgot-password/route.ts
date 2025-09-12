@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { sendEmail, emailTemplates } from '@/lib/email';
 import crypto from 'crypto';
 import type { ResetToken } from '@/types/auth';
@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário pelo email
-    const users = userDb.getAll();
+    const db = getDatabase();
+    const users = await db.getAllUsers();
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {

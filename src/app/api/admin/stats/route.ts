@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 
 // Verificar se o usuário é administrador
@@ -25,12 +25,14 @@ export async function GET(request: NextRequest) {
     switch (type) {
       case 'system':
         // Estatísticas gerais do sistema
-        const systemStats = adminDb.getSystemStats();
+        const db = getDatabase();
+        const systemStats = await db.getSystemStats();
         return NextResponse.json(systemStats);
 
       case 'users':
         // Lista de usuários com contagem de produtos
-        const usersWithProducts = adminDb.getUsersWithProductCounts();
+        const db = getDatabase();
+        const usersWithProducts = await db.getUsersWithProductCounts();
         return NextResponse.json(usersWithProducts);
 
       case 'user-details':
@@ -43,7 +45,8 @@ export async function GET(request: NextRequest) {
           );
         }
         
-        const userDetails = adminDb.getUserDetailedStats(parseInt(userId));
+        const db = getDatabase();
+        const userDetails = await db.getUserDetailedStats(parseInt(userId));
         if (!userDetails) {
           return NextResponse.json(
             { error: 'Usuário não encontrado' },

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 import { Pool } from 'pg';
 
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     }
 
     // Buscar usuário no banco
-    const user = userDb.getById(parseInt(userId));
+    const db = getDatabase();
+    const user = await db.getUserById(parseInt(userId));
     
     if (!user) {
       // Cookie inválido, remover

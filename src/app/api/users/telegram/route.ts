@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 
 export async function PUT(request: NextRequest) {
@@ -24,7 +24,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar se o usuário existe
-    const user = userDb.getById(userId);
+    const db = getDatabase();
+    const user = await db.getUserById(userId);
     if (!user) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
@@ -44,7 +45,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Buscar usuário existente
-    const existingUser = userDb.getById(userId);
+    const existingUser = await db.getUserById(userId);
     if (!existingUser) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
@@ -53,7 +54,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Atualizar telegram_id
-    const updatedUser = userDb.update(userId, {
+    const updatedUser = await db.updateUser(userId, {
       nome_completo: existingUser.nome_completo,
       email: existingUser.email,
       senha: existingUser.senha,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 
 // POST - Redefinir senha com token
 export async function POST(request: NextRequest) {
@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário
-    const users = userDb.getAll();
+    const db = getDatabase();
+    const users = await db.getAllUsers();
     const user = users.find(u => u.id === tokenData.userId);
 
     if (!user) {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
     
     try {
-      userDb.update(user.id, {
+      await db.updateUser(user.id, {
         nome_completo: user.nome_completo,
         email: user.email,
         senha: newPassword,

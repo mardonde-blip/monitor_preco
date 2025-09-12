@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { telegramConfigDb, userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { TelegramNotifier } from '@/lib/telegram';
 
 // GET - Buscar configuração do usuário
@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const config = telegramConfigDb.getByUserId(parseInt(userId));
+    const db = getDatabase();
+    const config = await db.getTelegramConfigByUserId(parseInt(userId));
     
     if (!config) {
       // Retornar configuração padrão se não existir
@@ -57,7 +58,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário existe
-    const user = userDb.getById(userId);
+    const db = getDatabase();
+    const user = await db.getUserById(userId);
     if (!user) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Salvar configuração
-    const config = telegramConfigDb.upsert({
+    const config = await db.upsertTelegramConfig({
       user_id: userId,
       bot_token: botToken || undefined,
       chat_id: chatId || undefined,
@@ -163,7 +165,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const success = telegramConfigDb.delete(parseInt(userId));
+    const db = getDatabase();
+    const success = await db.deleteTelegramConfig(parseInt(userId));
     
     if (!success) {
       return NextResponse.json(

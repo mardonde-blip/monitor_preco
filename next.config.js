@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['pg']
-  },
+  serverExternalPackages: ['pg'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Configurações específicas para o servidor

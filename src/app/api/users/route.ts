@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/database';
+import { getDatabase } from '@/lib/database-adapter';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 // GET - Listar todos os usuários
 export async function GET() {
   try {
-    const users = userDb.getAll();
+    const db = getDatabase();
+    const users = await db.getAllUsers();
     return NextResponse.json({
       success: true,
       data: users,
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar usuário
-    const newUser = userDb.create({
+    const db = getDatabase();
+    const newUser = await db.createUser({
       nome_completo: nome_completo.trim(),
       email: email.toLowerCase().trim(),
       senha: senha,
@@ -179,7 +181,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Buscar usuário existente para manter a senha
-    const existingUser = userDb.getById(parseInt(id));
+    const db = getDatabase();
+    const existingUser = await db.getUserById(parseInt(id));
     if (!existingUser) {
       return NextResponse.json(
         { success: false, error: 'Usuário não encontrado' },
@@ -188,7 +191,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Atualizar usuário
-    const updatedUser = userDb.update(parseInt(id), {
+    const updatedUser = await db.updateUser(parseInt(id), {
       nome_completo: nome_completo.trim(),
       email: email.toLowerCase().trim(),
       data_nascimento,
@@ -241,7 +244,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const deleted = userDb.delete(parseInt(id));
+    const db = getDatabase();
+    const deleted = await db.deleteUser(parseInt(id));
 
     if (!deleted) {
       return NextResponse.json(
