@@ -26,7 +26,7 @@ export async function POST() {
     console.log('🔄 Executando verificação manual de preços...');
     
     // Executar verificação manual
-    const result = await priceMonitorScheduler.runManualCheck();
+    await priceMonitorScheduler.runManualCheck();
     
     return NextResponse.json({
       success: true,

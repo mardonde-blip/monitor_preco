@@ -43,11 +43,26 @@ export async function GET(request: Request) {
       );
     }
 
-    // Cast do tipo para acessar as propriedades
-    const typedUser = user as { id: number; email: string; nome_completo: string; senha: string; [key: string]: any };
+    // Interface específica para o usuário
+    interface User {
+      id: number;
+      email: string;
+      nome_completo: string;
+      senha: string;
+    }
+    
+    // Verificação de tipo mais segura
+    const typedUser = user as User;
+    if (!typedUser || typeof typedUser !== 'object' || !typedUser.id) {
+      return NextResponse.json(
+        { error: 'Dados do usuário inválidos' },
+        { status: 500 }
+      );
+    }
     
     // Retornar dados do usuário (sem senha)
     const { senha, ...userWithoutPassword } = typedUser;
+    // senha é removida intencionalmente para segurança
     
     return NextResponse.json({
       user: userWithoutPassword
@@ -122,11 +137,13 @@ async function runDiagnostic() {
   } catch (error) {
     console.error('Erro no diagnóstico:', error);
     
+    const dbError = error as Error & { code?: string };
+    
     return NextResponse.json({
       success: false,
       error: 'Erro na conexão com PostgreSQL',
       errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
-      errorCode: (error as { code?: string })?.code,
+      errorCode: dbError.code,
       envInfo: {
         timestamp,
         nodeEnv: process.env.NODE_ENV,

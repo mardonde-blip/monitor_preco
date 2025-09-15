@@ -16,10 +16,9 @@ export async function GET() {
     await db.initDatabase();
     
     // Tentar buscar usuários para testar leitura
-    const userCount = 0;
     try {
       // Isso só funciona se já existirem usuários
-      const users = await db.getUserByEmail('test@example.com');
+      await db.getUserByEmail('test@example.com');
       console.log('✅ Teste de leitura concluído');
     } catch (readError) {
       console.log('ℹ️ Teste de leitura falhou (normal se não houver dados):', readError);

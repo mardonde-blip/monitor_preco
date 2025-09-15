@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, url, target_price, store, is_active } = body;
+    const { id, name, url, target_price, store } = body;
 
     if (!id || typeof id !== 'number') {
       return NextResponse.json(

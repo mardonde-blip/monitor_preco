@@ -1,8 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const hasDbUrl = !!process.env.DATABASE_URL;
+  
   try {
-    // Testar se conseguimos importar o módulo PostgreSQL
+    if (!hasDbUrl) {
+      return NextResponse.json({
+        success: false,
+        message: 'DATABASE_URL não configurada',
+        database: 'Nenhum',
+        environment: process.env.NODE_ENV,
+        hasDbUrl: false,
+        instructions: [
+          '1. Configure DATABASE_URL no .env.local para desenvolvimento local',
+          '2. Ou configure no Vercel para produção',
+          '3. Use PostgreSQL (recomendado: Neon Database gratuito)'
+        ]
+      }, { status: 400 });
+    }
+
+    // Testar PostgreSQL
     const dbModule = await import('../../../lib/database-postgres');
     
     // Testar conexão básica
@@ -14,18 +31,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Conexão PostgreSQL funcionando',
+      database: 'PostgreSQL',
       environment: process.env.NODE_ENV,
-      hasDbUrl: !!process.env.DATABASE_URL,
+      hasDbUrl: true,
       dbUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) + '...'
     });
+    
   } catch (error) {
     console.error('Erro no teste de DB:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido',
+      database: 'PostgreSQL',
       environment: process.env.NODE_ENV,
-      hasDbUrl: !!process.env.DATABASE_URL,
-      dbUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) + '...'
+      hasDbUrl,
+      dbUrlPrefix: hasDbUrl ? process.env.DATABASE_URL?.substring(0, 20) + '...' : 'N/A'
     }, { status: 500 });
   }
 }

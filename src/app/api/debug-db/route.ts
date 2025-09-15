@@ -45,10 +45,11 @@ export async function GET() {
       
     } catch (dbError: unknown) {
       console.error('❌ Erro na conexão PostgreSQL:', dbError);
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
       return NextResponse.json({
         success: false,
         error: 'Erro na conexão PostgreSQL',
-        details: dbError.message,
+        details: errorMessage,
         env: nodeEnv,
         timestamp: new Date().toISOString()
       }, { status: 500 });
@@ -56,10 +57,11 @@ export async function GET() {
     
   } catch (error: unknown) {
     console.error('❌ Erro geral no diagnóstico:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json({
       success: false,
       error: 'Erro interno no diagnóstico',
-      details: error.message,
+      details: errorMessage,
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

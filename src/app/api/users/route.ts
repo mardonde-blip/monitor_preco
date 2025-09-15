@@ -5,7 +5,7 @@ import { sendEmail, emailTemplates } from '@/lib/email';
 // GET - Listar todos os usuários
 export async function GET() {
   try {
-    const db = getDatabase();
+    const db = await getDatabase();
     const users = await db.getAllUsers();
     return NextResponse.json({
       success: true,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar usuário
-    const db = getDatabase();
+    const db = await getDatabase();
     const newUser = await db.createUser({
       nome_completo: nome_completo.trim(),
       email: email.toLowerCase().trim(),
@@ -89,23 +89,25 @@ export async function POST(request: NextRequest) {
       sexo,
       celular
     });
+    const typedNewUser = newUser as { id: number; nome_completo: string; email: string; [key: string]: unknown };
 
     // Enviar email de confirmação de cadastro
     try {
-      const emailTemplate = emailTemplates.welcomeEmail(newUser.nome_completo);
+      const emailTemplate = emailTemplates.welcomeEmail(typedNewUser.nome_completo);
       await sendEmail({
-        to: newUser.email,
+        to: typedNewUser.email,
         subject: emailTemplate.subject,
         html: emailTemplate.html
       });
-      console.log(`Email de boas-vindas enviado para: ${newUser.email}`);
+      console.log(`Email de boas-vindas enviado para: ${typedNewUser.email}`);
     } catch (emailError) {
       console.error('Erro ao enviar email de boas-vindas:', emailError);
       // Não falha o cadastro se o email não for enviado
     }
 
     // Retornar usuário sem senha
-    const { senha: _, ...userWithoutPassword } = newUser;
+    const { senha: _senha, ...userWithoutPassword } = typedNewUser;
+    // _senha é removida intencionalmente para segurança
 
     return NextResponse.json({
       success: true,
@@ -181,7 +183,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Buscar usuário existente para manter a senha
-    const db = getDatabase();
+    const db = await getDatabase();
     const existingUser = await db.getUserById(parseInt(id));
     if (!existingUser) {
       return NextResponse.json(
@@ -190,6 +192,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const typedExistingUser = existingUser as { senha: string; telegram_id?: number; [key: string]: unknown };
+
     // Atualizar usuário
     const updatedUser = await db.updateUser(parseInt(id), {
       nome_completo: nome_completo.trim(),
@@ -197,8 +201,8 @@ export async function PUT(request: NextRequest) {
       data_nascimento,
       sexo,
       celular,
-      senha: existingUser.senha,
-      telegram_id: existingUser.telegram_id
+      senha: typedExistingUser.senha,
+      telegram_id: typedExistingUser.telegram_id
     });
 
     if (!updatedUser) {
@@ -244,7 +248,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const deleted = await db.deleteUser(parseInt(id));
 
     if (!deleted) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -43,6 +43,35 @@ export default function ProductsPage() {
   
   const router = useRouter();
 
+  const loadProducts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.products || []);
+      } else {
+        showNotification('Erro ao carregar produtos', 'error');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      showNotification('Erro de conexão ao carregar produtos', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadSchedulerStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/scheduler');
+      if (response.ok) {
+        const data = await response.json();
+        setSchedulerStatus({ isRunning: data.isRunning, interval: monitoringInterval });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar status do scheduler:', error);
+    }
+  }, [monitoringInterval]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -60,38 +89,11 @@ export default function ProductsPage() {
       }
     };
 
-    const loadSchedulerStatus = async () => {
-      try {
-        const response = await fetch('/api/scheduler');
-        if (response.ok) {
-          const data = await response.json();
-          setSchedulerStatus({ isRunning: data.isRunning, interval: monitoringInterval });
-        }
-      } catch (error) {
-        console.error('Erro ao carregar status do scheduler:', error);
-      }
-    };
-
     checkAuth();
     loadSchedulerStatus();
-  }, [router, monitoringInterval]);
+  }, [router, loadProducts, loadSchedulerStatus]);
 
-  const loadProducts = async () => {
-    try {
-      const response = await fetch('/api/products');
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      } else {
-        showNotification('Erro ao carregar produtos', 'error');
-      }
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-      showNotification('Erro de conexão ao carregar produtos', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const deleteProduct = async (productId: number) => {
     try {

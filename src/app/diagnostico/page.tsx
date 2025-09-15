@@ -4,14 +4,24 @@ import { useState } from 'react';
 
 interface TesteResult {
   endpoint: string;
-  status: number;
+  status: number | string;
   ok: boolean;
-  data: unknown;
+  data?: unknown;
   error?: string;
 }
 
+interface DiagnosticoResult {
+  timestamp: string;
+  testes: TesteResult[];
+  resumo: {
+    total: number;
+    sucessos: number;
+    erros: number;
+  };
+}
+
 export default function DiagnosticoPage() {
-  const [resultado, setResultado] = useState<TesteResult[] | null>(null);
+  const [resultado, setResultado] = useState<DiagnosticoResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testarEndpoints = async () => {
@@ -165,7 +175,7 @@ export default function DiagnosticoPage() {
             </div>
 
             <div className="space-y-4">
-              {resultado.map((teste: TesteResult, index: number) => (
+              {resultado.testes.map((teste: TesteResult, index: number) => (
                 <div key={index} className={`p-4 rounded border-l-4 ${
                   teste.ok ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
                 }`}>
@@ -173,7 +183,7 @@ export default function DiagnosticoPage() {
                   <p><strong>Status:</strong> {teste.status}</p>
                   <p><strong>OK:</strong> {teste.ok ? 'Sim' : 'Não'}</p>
                   
-                  {teste.data && (
+                  {!!teste.data && (
                     <div className="mt-2">
                       <strong>Resposta:</strong>
                       <pre className="mt-1 p-2 bg-gray-100 rounded text-sm overflow-x-auto">

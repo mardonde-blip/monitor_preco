@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const config = await db.getTelegramConfigByUserId(parseInt(userId));
     
     if (!config) {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário existe
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = await db.getUserById(userId);
     if (!user) {
       return NextResponse.json(
@@ -165,7 +165,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const success = await db.deleteTelegramConfig(parseInt(userId));
     
     if (!success) {

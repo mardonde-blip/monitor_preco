@@ -15,8 +15,7 @@ const pool = new Pool({
 });
 
 // Função para executar queries
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function query(text: string, params?: any[]) {
+export async function query(text: string, params?: (string | number | boolean | null | undefined)[]) {
   const client = await pool.connect();
   try {
     const result = await client.query(text, params);
@@ -295,6 +294,76 @@ export async function getUserDetailedStats(userId: number) {
     totalProducts: parseInt(productsResult.rows[0].total),
     activeProducts: parseInt(activeProductsResult.rows[0].total)
   };
+}
+
+export async function updateUser(userId: number, userData: unknown) {
+  const typedUserData = userData as { nome_completo: string; email: string; senha: string; data_nascimento: string; sexo: string; celular: string; telegram_id: string; [key: string]: unknown };
+  const result = await query(
+    `UPDATE users SET 
+     nome_completo = $2, 
+     email = $3, 
+     senha = $4, 
+     data_nascimento = $5, 
+     sexo = $6, 
+     celular = $7, 
+     telegram_id = $8, 
+     updated_at = CURRENT_TIMESTAMP 
+     WHERE id = $1 
+     RETURNING *`,
+    [
+      userId,
+      typedUserData.nome_completo,
+      typedUserData.email,
+      typedUserData.senha,
+      typedUserData.data_nascimento,
+      typedUserData.sexo,
+      typedUserData.celular,
+      typedUserData.telegram_id
+    ]
+  );
+  return result.rows[0];
+}
+
+export async function getTelegramConfigByUserId(userId: number) {
+  const result = await query(
+    'SELECT * FROM telegram_config WHERE user_id = $1',
+    [userId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function upsertTelegramConfig(configData: unknown) {
+  const typedConfig = configData as { user_id: number; bot_token?: string; chat_id?: string; [key: string]: unknown };
+  const result = await query(
+    `INSERT INTO telegram_config (user_id, bot_token, chat_id, updated_at) 
+     VALUES ($1, $2, $3, CURRENT_TIMESTAMP) 
+     ON CONFLICT (user_id) 
+     DO UPDATE SET 
+       bot_token = COALESCE($2, telegram_config.bot_token), 
+       chat_id = COALESCE($3, telegram_config.chat_id), 
+       updated_at = CURRENT_TIMESTAMP 
+     RETURNING *`,
+    [typedConfig.user_id, typedConfig.bot_token, typedConfig.chat_id]
+  );
+  return result.rows[0];
+}
+
+export async function deleteTelegramConfig(userId: number): Promise<boolean> {
+  const result = await query(
+    'DELETE FROM telegram_config WHERE user_id = $1',
+    [userId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+export async function getAllUsers() {
+  const result = await query('SELECT * FROM users ORDER BY created_at DESC');
+  return result.rows;
+}
+
+export async function deleteUser(id: number): Promise<boolean> {
+  const result = await query('DELETE FROM users WHERE id = $1', [id]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 export default pool;

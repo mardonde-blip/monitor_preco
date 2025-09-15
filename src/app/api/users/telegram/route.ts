@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar se o usuário existe
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = await db.getUserById(userId);
     if (!user) {
       return NextResponse.json(
@@ -53,14 +53,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const typedExistingUser = existingUser as {
+      nome_completo: string;
+      email: string;
+      senha: string;
+      data_nascimento: string;
+      sexo: string;
+      celular: string;
+      [key: string]: unknown;
+    };
+
     // Atualizar telegram_id
     const updatedUser = await db.updateUser(userId, {
-      nome_completo: existingUser.nome_completo,
-      email: existingUser.email,
-      senha: existingUser.senha,
-      data_nascimento: existingUser.data_nascimento,
-      sexo: existingUser.sexo,
-      celular: existingUser.celular,
+      nome_completo: typedExistingUser.nome_completo,
+      email: typedExistingUser.email,
+      senha: typedExistingUser.senha,
+      data_nascimento: typedExistingUser.data_nascimento,
+      sexo: typedExistingUser.sexo,
+      celular: typedExistingUser.celular,
       telegram_id: telegram_id.trim()
     });
     if (!updatedUser) {
@@ -71,7 +81,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Retornar usuário sem senha
-    const { senha, ...userWithoutPassword } = updatedUser;
+    const typedUpdatedUser = updatedUser as { senha: string; [key: string]: unknown };
+    const { senha: _, ...userWithoutPassword } = typedUpdatedUser;
 
     return NextResponse.json({
       message: 'ID do Telegram atualizado com sucesso',

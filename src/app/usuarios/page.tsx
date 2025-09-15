@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/database-adapter';
 
@@ -64,7 +64,7 @@ export default function ListaUsuarios() {
     return age;
   };
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/users');
       const result = await response.json();
@@ -80,9 +80,9 @@ export default function ListaUsuarios() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadCurrentUser = async () => {
+  const loadCurrentUser = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
       const result = await response.json();
@@ -92,14 +92,14 @@ export default function ListaUsuarios() {
     } catch (error) {
       console.error('Erro ao carregar usuário logado:', error);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     loadUsers();
     if (userId) {
       loadCurrentUser();
     }
-  }, [userId]);
+  }, [userId, loadUsers, loadCurrentUser]);
 
   // Auto-hide message after 5 seconds
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TELEGRAM_TEMPLATES, validateTemplate } from '@/lib/telegram-templates';
 
 interface UserTelegramConfigProps {
@@ -44,7 +44,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
   const [message, setMessage] = useState<{type: 'success' | 'error'; text: string} | null>(null);
 
   // Carregar configuração existente
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
       setMessage(null);
@@ -64,11 +64,11 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     loadConfig();
-  }, [userId]);
+  }, [userId, loadConfig]);
 
   const handleSave = async () => {
     try {

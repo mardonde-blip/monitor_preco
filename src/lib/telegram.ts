@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { TelegramConfig, Product } from '@/types';
 import { getDatabase } from './database-adapter';
-import { MonitoredProduct } from '../types';
+
 
 export class TelegramNotifier {
   private bot: TelegramBot | null = null;
@@ -136,7 +136,7 @@ export class TelegramNotifier {
   // Enviar alerta personalizado para usuário específico
   async sendPersonalizedAlert(
     userId: number, 
-    product: MonitoredProduct, 
+    product: Product, 
     oldPrice?: number
   ): Promise<void> {
     try {
@@ -144,38 +144,43 @@ export class TelegramNotifier {
       const db = await getDatabase();
       const userConfig = await db.getTelegramConfigByUserId(userId);
       
-      if (!userConfig || !userConfig.is_enabled) {
+      const config = userConfig as { is_enabled: boolean; bot_token: string; chat_id: string; message_template: string };
+      if (!userConfig || !config.is_enabled) {
         console.log(`Notificações do Telegram desabilitadas para usuário ${userId}`);
         return;
       }
 
-      if (!userConfig.bot_token || !userConfig.chat_id) {
+      if (!config.bot_token || !config.chat_id) {
         console.log(`Configurações do Telegram incompletas para usuário ${userId}`);
         return;
       }
 
       // Inicializar bot com configurações do usuário
-      const userBot = new TelegramBot(userConfig.bot_token, { polling: false });
-      
+      const userBot = new TelegramBot(config.bot_token, { polling: false });
+
       // Calcular desconto
-      const discount = oldPrice && product.current_price 
-        ? ((oldPrice - product.current_price) / oldPrice * 100).toFixed(1)
+      const discount = oldPrice && product.currentPrice
+        ? ((oldPrice - product.currentPrice) / oldPrice * 100).toFixed(1)
         : '0';
 
       // Substituir variáveis no template
-      const message = userConfig.message_template
+      const message = config.message_template
         .replace('{product_name}', product.name)
-        .replace('{target_price}', product.target_price.toFixed(2))
-        .replace('{current_price}', (product.current_price || 0).toFixed(2))
+        .replace('{target_price}', (product.targetPrice || 0).toFixed(2))
+        .replace('{current_price}', (product.currentPrice || 0).toFixed(2))
         .replace('{discount}', discount)
         .replace('{product_url}', product.url)
         .replace('{timestamp}', new Date().toLocaleString('pt-BR'));
 
       // Verificar configurações de notificação
-      const shouldNotify = this.shouldSendNotification(userConfig, product, oldPrice);
+      const telegramConfig: TelegramConfig = {
+        botToken: config.bot_token,
+        chatId: config.chat_id
+      };
+      const shouldNotify = this.shouldSendNotification(telegramConfig, product, oldPrice);
       
       if (shouldNotify) {
-        await userBot.sendMessage(userConfig.chat_id, message, { 
+        await userBot.sendMessage(config.chat_id, message, { 
           parse_mode: 'HTML',
           disable_web_page_preview: false
         });
@@ -189,44 +194,43 @@ export class TelegramNotifier {
 
   // Verificar se deve enviar notificação baseado nas configurações
   private shouldSendNotification(
-    config: UserTelegramConfig, 
-    product: MonitoredProduct, 
+    config: TelegramConfig,
+    product: Product,
     oldPrice?: number
   ): boolean {
-    const { notification_settings } = config;
-    
     // Se atingiu o preço alvo
-    if (product.current_price && product.current_price <= product.target_price) {
-      return notification_settings.target_reached;
+    if (product.currentPrice && product.targetPrice && product.currentPrice <= product.targetPrice) {
+      return true;
     }
     
     // Se houve queda de preço
-    if (oldPrice && product.current_price && product.current_price < oldPrice) {
-      return notification_settings.price_drop;
+    if (oldPrice && product.currentPrice && product.currentPrice < oldPrice) {
+      return true;
     }
     
     return false;
   }
 
   // Enviar resumo diário para usuário
-  async sendDailySummary(userId: number, products: MonitoredProduct[]): Promise<void> {
+  async sendDailySummary(userId: number, products: Product[]): Promise<void> {
     try {
       const db = await getDatabase();
       const userConfig = await db.getTelegramConfigByUserId(userId);
       
-      if (!userConfig || !userConfig.is_enabled || !userConfig.notification_settings.daily_summary) {
+      const config = userConfig as { is_enabled: boolean; bot_token: string; chat_id: string; message_template: string };
+      if (!userConfig || !config.is_enabled) {
         return;
       }
 
-      if (!userConfig.bot_token || !userConfig.chat_id) {
+      if (!config.bot_token || !config.chat_id) {
         console.log(`Configurações do Telegram incompletas para usuário ${userId}`);
         return;
       }
 
-      const userBot = new TelegramBot(userConfig.bot_token, { polling: false });
+      const userBot = new TelegramBot(config.bot_token, { polling: false });
       
-      const activeProducts = products.filter(p => p.is_active);
-      const targetReached = activeProducts.filter(p => p.current_price && p.current_price <= p.target_price);
+      const activeProducts = products.filter(p => p.status === 'active');
+      const targetReached = activeProducts.filter(p => p.currentPrice && p.targetPrice && p.currentPrice <= p.targetPrice);
       
       let message = `📊 <b>RESUMO DIÁRIO</b>\n\n`;
       message += `📦 Produtos monitorados: ${activeProducts.length}\n`;
@@ -235,14 +239,14 @@ export class TelegramNotifier {
       if (targetReached.length > 0) {
         message += `<b>🔥 OPORTUNIDADES:</b>\n`;
         targetReached.forEach(product => {
-          message += `• ${product.name} - R$ ${(product.current_price || 0).toFixed(2)}\n`;
+          message += `• ${product.name} - R$ ${(product.currentPrice || 0).toFixed(2)}\n`;
         });
         message += `\n`;
       }
       
       message += `⏰ ${new Date().toLocaleString('pt-BR')}`;
 
-      await userBot.sendMessage(userConfig.chat_id, message, { 
+      await userBot.sendMessage(config.chat_id, message, { 
         parse_mode: 'HTML'
       });
       
@@ -261,15 +265,16 @@ export class TelegramNotifier {
       throw new Error('Configuração não encontrada para este usuário');
     }
 
-    if (!userConfig.bot_token || !userConfig.chat_id) {
+    const config = userConfig as { bot_token: string; chat_id: string };
+    if (!config.bot_token || !config.chat_id) {
       throw new Error('Token do bot ou Chat ID não configurados');
     }
 
-    const userBot = new TelegramBot(userConfig.bot_token, { polling: false });
+    const userBot = new TelegramBot(config.bot_token, { polling: false });
     
     const testMessage = `✅ <b>TESTE DE CONFIGURAÇÃO</b>\n\nSuas notificações personalizadas do Telegram estão funcionando!\n\n⏰ ${new Date().toLocaleString('pt-BR')}`;
     
-    await userBot.sendMessage(userConfig.chat_id, testMessage, { 
+    await userBot.sendMessage(config.chat_id, testMessage, { 
       parse_mode: 'HTML'
     });
   }

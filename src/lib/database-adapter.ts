@@ -45,6 +45,12 @@ interface DatabaseInterface {
   getSystemStats: () => Promise<unknown>;
   getUsersWithProductCounts: () => Promise<unknown[]>;
   getUserDetailedStats: (userId: number) => Promise<unknown>;
+  updateUser: (userId: number, userData: unknown) => Promise<unknown>;
+  getTelegramConfigByUserId: (userId: number) => Promise<unknown>;
+  upsertTelegramConfig: (configData: unknown) => Promise<unknown>;
+  deleteTelegramConfig: (userId: number) => Promise<boolean>;
+  getAllUsers: () => Promise<unknown[]>;
+  deleteUser: (id: number) => Promise<boolean>;
 }
 
 // Inicializar o banco PostgreSQL
@@ -72,11 +78,17 @@ async function createPostgreSQLAdapter(): Promise<DatabaseInterface> {
     setSetting: pgModule.setSetting,
     getSystemStats: pgModule.getSystemStats,
     getUsersWithProductCounts: pgModule.getUsersWithProductCounts,
-    getUserDetailedStats: pgModule.getUserDetailedStats
+    getUserDetailedStats: pgModule.getUserDetailedStats,
+    updateUser: pgModule.updateUser,
+    getTelegramConfigByUserId: pgModule.getTelegramConfigByUserId,
+    upsertTelegramConfig: pgModule.upsertTelegramConfig,
+    deleteTelegramConfig: pgModule.deleteTelegramConfig,
+    getAllUsers: pgModule.getAllUsers,
+    deleteUser: pgModule.deleteUser
   };
   
   console.log('✅ Adapter PostgreSQL criado:', Object.keys(adapter));
-  return adapter;
+  return adapter as DatabaseInterface;
 }
 
 // Usar PostgreSQL em todos os ambientes
@@ -175,7 +187,7 @@ export class DatabaseAdapter {
     celular: string;
   }): Promise<User> {
     const dbInstance = await getDatabase();
-    return await dbInstance.createUser(userData) as User;
+    return await dbInstance.createUser(userData as unknown) as User;
   }
 
   static async getUserByEmail(email: string): Promise<User | null> {
@@ -185,8 +197,10 @@ export class DatabaseAdapter {
 
   static async getUserById(id: number): Promise<User | null> {
     const dbInstance = await getDatabase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await (dbInstance as any).getUserById(id) as User | null;
+    interface DatabaseInstance {
+      getUserById(id: number): Promise<User | null>;
+    }
+    return await (dbInstance as DatabaseInstance).getUserById(id);
   }
 
   static async createProduct(productData: {
@@ -223,19 +237,23 @@ export class DatabaseAdapter {
 
   static async setSetting(key: string, value: string): Promise<void> {
     const dbInstance = await getDatabase();
-    return await dbInstance.setSetting(key, value);
+    await dbInstance.setSetting(key, value);
   }
 
   static async getAllProducts(): Promise<Product[]> {
     const dbInstance = await getDatabase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await (dbInstance as any).getAllProducts() as Product[];
+    interface DatabaseInstance {
+      getAllProducts(): Promise<Product[]>;
+    }
+    return await (dbInstance as DatabaseInstance).getAllProducts();
   }
 
   static async getProductById(id: number): Promise<Product | null> {
     const dbInstance = await getDatabase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await (dbInstance as any).getProductById(id) as Product | null;
+    interface DatabaseInstance {
+      getProductById(id: number): Promise<Product | null>;
+    }
+    return await (dbInstance as DatabaseInstance).getProductById(id);
   }
 
   static async updateProduct(id: number, userId: number, updateData: {

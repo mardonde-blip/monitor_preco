@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface SchedulerStatus {
   isRunning: boolean;
@@ -13,12 +13,7 @@ export default function SchedulerControl() {
   const [loading, setLoading] = useState(false);
   const [lastCheck, setLastCheck] = useState<string>('');
 
-  // Verifica o status do scheduler ao carregar o componente
-  useEffect(() => {
-    checkSchedulerStatus();
-  }, []);
-
-  const checkSchedulerStatus = async () => {
+  const checkSchedulerStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/scheduler');
       const data = await response.json();
@@ -29,7 +24,12 @@ export default function SchedulerControl() {
     } catch (error) {
       console.error('Erro ao verificar status do scheduler:', error);
     }
-  };
+  }, []);
+
+  // Verifica o status do scheduler ao carregar o componente
+  useEffect(() => {
+    checkSchedulerStatus();
+  }, [checkSchedulerStatus]);
 
   const controlScheduler = async (action: 'start' | 'stop' | 'manual') => {
     setLoading(true);

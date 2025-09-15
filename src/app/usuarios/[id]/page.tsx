@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { User } from '@/lib/database-adapter';
 
@@ -13,7 +13,7 @@ export default function DetalhesUsuario() {
   const userId = params.id as string;
 
   // Carregar dados do usuário
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
       const result = await response.json();
@@ -29,7 +29,7 @@ export default function DetalhesUsuario() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   // Formatar data
   const formatDate = (dateString: string) => {
@@ -94,7 +94,7 @@ export default function DetalhesUsuario() {
     if (userId) {
       loadUser();
     }
-  }, [userId]);
+  }, [userId, loadUser]);
 
   if (isLoading) {
     return (

@@ -50,9 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar usuário
-    const db = getDatabase();
-    const users = await db.getAllUsers();
-    const user = users.find(u => u.id === tokenData.userId);
+    const db = await getDatabase();
+    const user = await db.getUserById(tokenData.userId);
 
     if (!user) {
       global.resetTokens.delete(token);
@@ -62,8 +61,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Cast do tipo para acessar as propriedades
+    const typedUser = user as { id: number; email: string; nome_completo: string; senha: string; data_nascimento: string; sexo: string; celular: string; telegram_id: string };
+
     // Atualizar senha do usuário
-    if (!user.id) {
+    if (!typedUser.id) {
       return NextResponse.json(
         { success: false, error: 'ID do usuário inválido.' },
         { status: 500 }
@@ -71,20 +73,20 @@ export async function POST(request: NextRequest) {
     }
     
     try {
-      await db.updateUser(user.id, {
-        nome_completo: user.nome_completo,
-        email: user.email,
+      await db.updateUser(typedUser.id, {
+        nome_completo: typedUser.nome_completo,
+        email: typedUser.email,
         senha: newPassword,
-        data_nascimento: user.data_nascimento,
-        sexo: user.sexo,
-        celular: user.celular,
-        telegram_id: user.telegram_id
+        data_nascimento: typedUser.data_nascimento,
+        sexo: typedUser.sexo,
+        celular: typedUser.celular,
+        telegram_id: typedUser.telegram_id
       });
       
       // Remover token usado
       global.resetTokens.delete(token);
       
-      console.log(`Senha redefinida com sucesso para usuário: ${user.email}`);
+      console.log(`Senha redefinida com sucesso para usuário: ${typedUser.email}`);
       
       return NextResponse.json({
         success: true,
