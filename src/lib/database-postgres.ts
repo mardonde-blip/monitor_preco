@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
 interface DatabaseConfig {
   connectionString: string;
@@ -113,10 +114,13 @@ export async function createUser(userData: {
   sexo: string;
   celular: string;
 }) {
+  // Hash da senha antes de salvar
+  const hashedPassword = bcrypt.hashSync(userData.senha, 10);
+  
   const result = await query(
     `INSERT INTO users (nome_completo, email, senha, data_nascimento, sexo, celular) 
      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [userData.nome_completo, userData.email, userData.senha, userData.data_nascimento, userData.sexo, userData.celular]
+    [userData.nome_completo, userData.email, hashedPassword, userData.data_nascimento, userData.sexo, userData.celular]
   );
   return result.rows[0];
 }
@@ -326,7 +330,7 @@ export async function updateUser(userId: number, userData: unknown) {
 
 export async function getTelegramConfigByUserId(userId: number) {
   const result = await query(
-    'SELECT * FROM telegram_config WHERE user_id = $1',
+    'SELECT * FROM user_telegram_config WHERE user_id = $1',
     [userId]
   );
   return result.rows[0] || null;
@@ -335,12 +339,12 @@ export async function getTelegramConfigByUserId(userId: number) {
 export async function upsertTelegramConfig(configData: unknown) {
   const typedConfig = configData as { user_id: number; bot_token?: string; chat_id?: string; [key: string]: unknown };
   const result = await query(
-    `INSERT INTO telegram_config (user_id, bot_token, chat_id, updated_at) 
+    `INSERT INTO user_telegram_config (user_id, bot_token, chat_id, updated_at) 
      VALUES ($1, $2, $3, CURRENT_TIMESTAMP) 
      ON CONFLICT (user_id) 
      DO UPDATE SET 
-       bot_token = COALESCE($2, telegram_config.bot_token), 
-       chat_id = COALESCE($3, telegram_config.chat_id), 
+       bot_token = COALESCE($2, user_telegram_config.bot_token), 
+       chat_id = COALESCE($3, user_telegram_config.chat_id), 
        updated_at = CURRENT_TIMESTAMP 
      RETURNING *`,
     [typedConfig.user_id, typedConfig.bot_token, typedConfig.chat_id]
@@ -350,7 +354,7 @@ export async function upsertTelegramConfig(configData: unknown) {
 
 export async function deleteTelegramConfig(userId: number): Promise<boolean> {
   const result = await query(
-    'DELETE FROM telegram_config WHERE user_id = $1',
+    'DELETE FROM user_telegram_config WHERE user_id = $1',
     [userId]
   );
   return (result.rowCount ?? 0) > 0;
