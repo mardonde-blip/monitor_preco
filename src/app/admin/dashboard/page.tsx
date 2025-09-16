@@ -41,8 +41,8 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
   const loadUser = useCallback(async () => {
     try {
@@ -78,6 +78,14 @@ export default function AdminDashboard() {
         setLoading(false);
       }
     }, [router]);
+
+  // Carregar userId do localStorage no cliente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      setUserId(storedUserId);
+    }
+  }, []);
 
   useEffect(() => {
     loadStats();

@@ -15,8 +15,8 @@ export default function ListaUsuarios() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
 
 
@@ -93,6 +93,14 @@ export default function ListaUsuarios() {
       console.error('Erro ao carregar usuário logado:', error);
     }
   }, [userId]);
+
+  // Carregar userId do localStorage no cliente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      setUserId(storedUserId);
+    }
+  }, []);
 
   useEffect(() => {
     loadUsers();
