@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPriceScraper } from '@/lib/scraper';
+import { EnhancedProductScraper } from '@/lib/enhanced-scraper';
 import { telegramNotifier } from '@/lib/telegram';
 import { Product, NotificationSettings } from '@/types';
 
@@ -27,8 +28,9 @@ export async function POST(request: NextRequest) {
       telegramNotifier.init(settings.telegram);
     }
 
-    // Create a new scraper instance
+    // Create scraper instances
     const scraper = createPriceScraper();
+    const enhancedScraper = new EnhancedProductScraper();
     interface MonitorResult {
       productId: string;
       success: boolean;
@@ -43,10 +45,20 @@ export async function POST(request: NextRequest) {
 
     for (const product of products) {
       try {
-        // Use automatic detection if selector is 'auto', otherwise use specific selector
-        const scrapingResult = product.selector === 'auto' 
-          ? await scraper.scrapePriceAuto(product.url)
-          : await scraper.scrapePrice(product.url, product.selector);
+        let scrapingResult;
+        
+        // Tentar primeiro com o scraper aprimorado (com fallback para Exa)
+        try {
+          scrapingResult = await enhancedScraper.scrapeWithFallback(product.url);
+          console.log(`✅ Scraping aprimorado bem-sucedido para ${product.name}`);
+        } catch (enhancedError) {
+          console.log(`⚠️ Scraper aprimorado falhou, usando método tradicional para ${product.name}`);
+          
+          // Fallback para o scraper tradicional
+          scrapingResult = product.selector === 'auto' 
+            ? await scraper.scrapePriceAuto(product.url)
+            : await scraper.scrapePrice(product.url, product.selector);
+        }
         
         if (scrapingResult.success && scrapingResult.price !== undefined) {
           const newPrice = scrapingResult.price;
