@@ -65,7 +65,7 @@ export class TelegramNotifier {
   }
 
   private formatPriceAlertMessage(product: Product, oldPrice: number, newPrice: number, discount: string): string {
-    const targetPriceText = product.targetPrice ? `🎯 Preço alvo: R$ ${product.targetPrice.toFixed(2)}\n` : '';
+    const targetPriceText = product.targetPrice ? `🎯 Preço alvo: R$ ${Number(product.targetPrice).toFixed(2)}\n` : '';
     return `🚨 <b>ALERTA DE PREÇO!</b>\n\n` +
            `📦 <b>${product.name}</b>\n\n` +
            targetPriceText +
@@ -166,8 +166,8 @@ export class TelegramNotifier {
       // Substituir variáveis no template
       const message = config.message_template
         .replace('{product_name}', product.name)
-        .replace('{target_price}', (product.targetPrice || 0).toFixed(2))
-        .replace('{current_price}', (product.currentPrice || 0).toFixed(2))
+        .replace('{target_price}', Number(product.targetPrice || 0).toFixed(2))
+        .replace('{current_price}', Number(product.currentPrice || 0).toFixed(2))
         .replace('{discount}', discount)
         .replace('{product_url}', product.url)
         .replace('{timestamp}', new Date().toLocaleString('pt-BR'));
@@ -239,7 +239,7 @@ export class TelegramNotifier {
       if (targetReached.length > 0) {
         message += `<b>🔥 OPORTUNIDADES:</b>\n`;
         targetReached.forEach(product => {
-          message += `• ${product.name} - R$ ${(product.currentPrice || 0).toFixed(2)}\n`;
+          message += `• ${product.name} - R$ ${Number(product.currentPrice || 0).toFixed(2)}\n`;
         });
         message += `\n`;
       }

@@ -66,10 +66,12 @@ export async function initDatabase() {
     await query(`
       CREATE TABLE IF NOT EXISTS user_telegram_config (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL UNIQUE,
         bot_token TEXT,
         chat_id TEXT,
         notifications_enabled BOOLEAN DEFAULT true,
+        message_template TEXT,
+        notification_settings JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -183,6 +185,11 @@ export async function updateProduct(productId: number, userId: number, updateDat
   current_price?: number;
   store?: string;
 }) {
+  // Verificar se updateData existe
+  if (!updateData) {
+    throw new Error('Dados de atualização são obrigatórios');
+  }
+
   const setParts = [];
   const values = [];
   let paramIndex = 1;
@@ -337,18 +344,37 @@ export async function getTelegramConfigByUserId(userId: number) {
 }
 
 export async function upsertTelegramConfig(configData: unknown) {
-  const typedConfig = configData as { user_id: number; bot_token?: string; chat_id?: string; [key: string]: unknown };
+  const typedConfig = configData as { 
+    user_id: number; 
+    bot_token?: string; 
+    chat_id?: string; 
+    is_enabled?: boolean;
+    message_template?: string;
+    notification_settings?: object;
+    [key: string]: unknown 
+  };
+  
   const result = await query(
-    `INSERT INTO user_telegram_config (user_id, bot_token, chat_id, updated_at) 
-     VALUES ($1, $2, $3, CURRENT_TIMESTAMP) 
-     ON CONFLICT (user_id) 
-     DO UPDATE SET 
-       bot_token = COALESCE($2, user_telegram_config.bot_token), 
-       chat_id = COALESCE($3, user_telegram_config.chat_id), 
-       updated_at = CURRENT_TIMESTAMP 
+    `INSERT INTO user_telegram_config (user_id, bot_token, chat_id, notifications_enabled, message_template, notification_settings, updated_at) 
+     VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
+     ON CONFLICT (user_id) DO UPDATE SET 
+       bot_token = EXCLUDED.bot_token,
+       chat_id = EXCLUDED.chat_id,
+       notifications_enabled = EXCLUDED.notifications_enabled,
+       message_template = EXCLUDED.message_template,
+       notification_settings = EXCLUDED.notification_settings,
+       updated_at = CURRENT_TIMESTAMP
      RETURNING *`,
-    [typedConfig.user_id, typedConfig.bot_token, typedConfig.chat_id]
+    [
+      typedConfig.user_id, 
+      typedConfig.bot_token, 
+      typedConfig.chat_id,
+      typedConfig.is_enabled,
+      typedConfig.message_template,
+      JSON.stringify(typedConfig.notification_settings)
+    ]
   );
+  
   return result.rows[0];
 }
 

@@ -28,6 +28,14 @@ interface ProductComparison {
   };
 }
 
+interface SimilarProduct {
+  title: string;
+  url: string;
+  score: number;
+  content: string;
+  highlights: string[];
+}
+
 export class EnhancedProductScraper {
   private traditionalScraper;
   private exaSearch: ExaProductSearch;
@@ -94,14 +102,10 @@ export class EnhancedProductScraper {
 
       // Tentar extrair preço dos resultados
       for (const result of searchResults) {
-        const prices = this.exaSearch.extractPriceInfo(result.content);
-        
-        if (prices.length > 0) {
-          const price = prices[0]; // Pegar o primeiro preço encontrado
-          
+        if (result.estimatedPrice) {
           return {
             success: true,
-            price: price,
+            price: result.estimatedPrice,
             method: 'exa',
             selector: 'exa-extracted'
           };
@@ -123,7 +127,7 @@ export class EnhancedProductScraper {
   /**
    * Encontrar produtos similares usando Exa
    */
-  async findSimilarProducts(originalUrl: string, maxResults: number = 5): Promise<any[]> {
+  async findSimilarProducts(originalUrl: string, maxResults: number = 5): Promise<SimilarProduct[]> {
     try {
       const productQuery = this.extractProductQueryFromUrl(originalUrl);
       
@@ -140,11 +144,11 @@ export class EnhancedProductScraper {
       );
 
       return searchResults.map(result => ({
-        title: result.title,
+        title: result.name, // Usar 'name' em vez de 'title'
         url: result.url,
         score: result.score,
-        content: result.content.substring(0, 200) + '...',
-        highlights: result.highlights
+        content: result.description?.substring(0, 200) + '...' || '', // Usar 'description' em vez de 'content'
+        highlights: [] // ProductSearchResult não tem highlights
       }));
 
     } catch (error) {
@@ -169,14 +173,12 @@ export class EnhancedProductScraper {
       const alternativesWithPrices = await Promise.all(
         alternatives.slice(0, maxAlternatives).map(async (alt) => {
           try {
-            const prices = this.exaSearch.extractPriceInfo(alt.content);
-            const stores = this.exaSearch.extractStoreInfo(alt.content);
-            
+            // Usar dados já disponíveis do ProductSearchResult
             return {
               title: alt.title,
-              price: prices[0] || 0,
+              price: 0, // Preço será obtido por scraping tradicional se necessário
               url: alt.url,
-              store: stores[0] || new URL(alt.url).hostname,
+              store: new URL(alt.url).hostname,
               score: alt.score
             };
           } catch {
@@ -204,7 +206,7 @@ export class EnhancedProductScraper {
       return {
         originalUrl,
         originalPrice,
-        alternatives: validAlternatives as any[],
+        alternatives: validAlternatives.filter((alt): alt is NonNullable<typeof alt> => alt !== null),
         bestPrice
       };
 
@@ -258,9 +260,13 @@ export class EnhancedProductScraper {
     priceHistory: Array<{ price: number; timestamp: Date; method: string }>;
     alerts: string[];
   }> {
-    const results = {
-      priceHistory: [] as Array<{ price: number; timestamp: Date; method: string }>,
-      alerts: [] as string[]
+    const results: {
+      currentPrice?: number;
+      priceHistory: Array<{ price: number; timestamp: Date; method: string }>;
+      alerts: string[];
+    } = {
+      priceHistory: [],
+      alerts: []
     };
 
     try {

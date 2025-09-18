@@ -81,10 +81,8 @@ export default function AdminDashboard() {
 
   // Carregar userId do localStorage no cliente
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUserId = localStorage.getItem('userId');
-      setUserId(storedUserId);
-    }
+    const storedUserId = localStorage.getItem('userId');
+    setUserId(storedUserId);
   }, []);
 
   useEffect(() => {

@@ -190,14 +190,14 @@ export default function Dashboard() {
                         🏷️ Nome do Produto *
                       </label>
                       <input
-                        type="text"
-                        id="product_name"
-                        required
-                        value={productForm.name}
-                        onChange={(e) => setProductForm({...productForm, name: e.target.value})}
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
-                        placeholder="Ex: iPhone 15 Pro Max 256GB"
-                      />
+                          type="text"
+                          id="product_name"
+                          required
+                          value={productForm.name || ''}
+                          onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
+                          placeholder="Ex: iPhone 15 Pro Max 256GB"
+                        />
                     </div>
                     
                     <div>
@@ -205,14 +205,14 @@ export default function Dashboard() {
                         🔗 URL do Produto *
                       </label>
                       <input
-                        type="url"
-                        id="product_url"
-                        required
-                        value={productForm.url}
-                        onChange={(e) => setProductForm({...productForm, url: e.target.value})}
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
-                        placeholder="https://exemplo.com/produto"
-                      />
+                          type="url"
+                          id="product_url"
+                          required
+                          value={productForm.url || ''}
+                          onChange={(e) => setProductForm({...productForm, url: e.target.value})}
+                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
+                          placeholder="https://exemplo.com/produto"
+                        />
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,30 +221,30 @@ export default function Dashboard() {
                           💰 Preço Alvo (R$) *
                         </label>
                         <input
-                          type="number"
-                          id="target_price"
-                          step="0.01"
-                          min="0"
-                          required
-                          value={productForm.target_price}
-                          onChange={(e) => setProductForm({...productForm, target_price: e.target.value})}
-                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
-                          placeholder="1299.99"
-                        />
+                            type="number"
+                            id="target_price"
+                            step="0.01"
+                            min="0"
+                            required
+                            value={productForm.target_price || ''}
+                            onChange={(e) => setProductForm({...productForm, target_price: e.target.value})}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
+                            placeholder="1299.99"
+                          />
                       </div>
                       <div>
                         <label htmlFor="store" className="block text-sm font-medium text-gray-700 mb-2">
                           🏪 Loja *
                         </label>
                         <input
-                          type="text"
-                          id="store"
-                          required
-                          value={productForm.store}
-                          onChange={(e) => setProductForm({...productForm, store: e.target.value})}
-                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
-                          placeholder="Ex: Amazon, Mercado Livre"
-                        />
+                            type="text"
+                            id="store"
+                            required
+                            value={productForm.store || ''}
+                            onChange={(e) => setProductForm({...productForm, store: e.target.value})}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3"
+                            placeholder="Ex: Amazon, Mercado Livre"
+                          />
                       </div>
                     </div>
                   </div>

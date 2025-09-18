@@ -223,7 +223,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
             id="botToken"
             type="text"
             placeholder="Cole aqui o token do seu bot (ex: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz)"
-            value={config.bot_token}
+            value={config.bot_token || ''}
             onChange={(e) => setConfig(prev => ({ ...prev, bot_token: e.target.value }))}
             disabled={loading}
             style={{
@@ -247,7 +247,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
             id="chatId"
             type="text"
             placeholder="Digite seu Chat ID (ex: 123456789)"
-            value={config.chat_id}
+            value={config.chat_id || ''}
             onChange={(e) => setConfig(prev => ({ ...prev, chat_id: e.target.value }))}
             disabled={loading}
             style={{
@@ -284,7 +284,7 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
           <textarea
             id="messageTemplate"
             placeholder="Template da mensagem..."
-            value={config.message_template}
+            value={config.message_template || ''}
             onChange={(e) => handleTemplateChange(e.target.value)}
             rows={6}
             disabled={loading}

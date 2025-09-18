@@ -138,7 +138,7 @@ export class PriceMonitorScheduler {
         const currentPrice = product.currentPrice;
         
         if (currentPrice !== null && currentPrice !== undefined && targetPrice !== undefined && currentPrice <= targetPrice) {
-          console.log(`🎯 PRODUTO JÁ COM PREÇO BAIXO: ${product.name} - R$ ${currentPrice.toFixed(2)} <= R$ ${targetPrice.toFixed(2)}`);
+          console.log(`🎯 PRODUTO JÁ COM PREÇO BAIXO: ${product.name} - R$ ${currentPrice.toFixed(2)} <= R$ ${Number(targetPrice).toFixed(2)}`);
           await this.sendPriceAlert(product);
         }
         
@@ -169,7 +169,7 @@ export class PriceMonitorScheduler {
         await this.sendPriceAlert(product);
       }
       
-      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (alvo: R$ ${targetPrice?.toFixed(2) || 'N/A'}, anterior: R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'})`);
+      console.log(`${product.name}: R$ ${newPrice?.toFixed(2) || 'N/A'} (alvo: R$ ${Number(targetPrice || 0).toFixed(2)}, anterior: R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'})`);
       
       if (priceDropped) {
         console.log(`🎯 ALERTA: Preço de ${product.name} baixou para R$ ${newPrice?.toFixed(2) || 'N/A'}!`);
@@ -240,7 +240,7 @@ export class PriceMonitorScheduler {
         console.error('Erro ao enviar alerta via Email:', emailError);
       }
       
-      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'} -> R$ ${(product.currentPrice || 0).toFixed(2)})`);
+      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'} -> R$ ${Number(product.currentPrice || 0).toFixed(2)})`);
       
     } catch (error) {
       console.error('Erro ao enviar alerta:', error);

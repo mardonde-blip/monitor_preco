@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const results: any = {
+    const results: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       testType: testType || 'search'
     };
@@ -51,21 +51,18 @@ export async function POST(request: NextRequest) {
         const productInfo = await Promise.all(
           searchResults.slice(0, 3).map(async (result) => {
             try {
-              const stores = exaSearch.extractStoreInfo(result.content);
-              const prices = exaSearch.extractPriceInfo(result.content);
-              
               return {
                 url: result.url,
-                title: result.title,
+                title: result.name,
                 score: result.score,
-                stores,
-                prices,
-                highlights: result.highlights
+                store: result.store,
+                estimatedPrice: result.estimatedPrice,
+                description: result.description
               };
             } catch (error) {
               return {
                 url: result.url,
-                title: result.title,
+                title: result.name,
                 error: error instanceof Error ? error.message : 'Erro desconhecido'
               };
             }

@@ -1,7 +1,7 @@
 import Exa from 'exa-js';
 
 interface ExaSearchResult {
-  title: string;
+  title: string | null;
   url: string;
   publishedDate?: string;
   text?: string;
@@ -68,22 +68,17 @@ export class ExaProductSearch {
       // Melhora a query para buscar produtos específicos
       const enhancedQuery = `${query} preço comprar produto loja`;
 
-      const searchOptions = {
-        query: enhancedQuery,
+      const response = await this.exa.searchAndContents(enhancedQuery, {
         numResults: maxResults,
         includeDomains: includeDomains,
         excludeDomains: excludeDomains,
         useAutoprompt: true,
-        contents: {
-          text: includeText,
-          highlights: includeHighlights ? {
-            numSentences: 3,
-            highlightsPerUrl: 2
-          } : undefined
-        }
-      };
-
-      const response = await this.exa.searchAndContents(searchOptions);
+        text: includeText ? true : undefined,
+        highlights: includeHighlights ? {
+          numSentences: 3,
+          highlightsPerUrl: 2
+        } : undefined
+      });
       
       return this.parseProductResults(response.results);
     } catch (error) {
@@ -100,24 +95,17 @@ export class ExaProductSearch {
     maxResults: number = 5
   ): Promise<ProductSearchResult[]> {
     try {
-      const response = await axios.post(
-        `${this.baseUrl}/find_similar`,
-        {
-          url: productUrl,
-          num_results: maxResults,
-          include_text: true,
-          include_highlights: true
-        },
-        {
-          headers: {
-            'x-api-key': this.apiKey,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await this.exa.findSimilar(productUrl, {
+        numResults: maxResults
+      });
+
+      // Buscar conteúdo dos resultados
+      const resultsWithContent = await this.exa.getContents(
+        response.results.map(r => r.id),
+        { text: true, highlights: true }
       );
 
-      const data: ExaSearchResponse = response.data;
-      return this.parseProductResults(data.results);
+      return this.parseProductResults(resultsWithContent.results);
     } catch (error) {
       console.error('Erro na busca de produtos similares:', error);
       throw new Error('Falha na busca de produtos similares');
@@ -133,7 +121,7 @@ export class ExaProductSearch {
       const estimatedPrice = this.extractPriceFromText(result.text || '');
       
       return {
-        name: result.title,
+        name: result.title || 'Produto sem título',
         url: result.url,
         store,
         estimatedPrice,
@@ -201,7 +189,7 @@ export class ExaProductSearch {
     try {
       await this.searchProducts('teste', { maxResults: 1 });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

@@ -61,6 +61,7 @@ export async function GET(request: Request) {
     }
     
     // Retornar dados do usuário (sem senha)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { senha, ...userWithoutPassword } = typedUser;
     // senha é removida intencionalmente para segurança
     

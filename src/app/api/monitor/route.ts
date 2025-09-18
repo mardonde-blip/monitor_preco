@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         try {
           scrapingResult = await enhancedScraper.scrapeWithFallback(product.url);
           console.log(`✅ Scraping aprimorado bem-sucedido para ${product.name}`);
-        } catch (enhancedError) {
+        } catch {
           console.log(`⚠️ Scraper aprimorado falhou, usando método tradicional para ${product.name}`);
           
           // Fallback para o scraper tradicional

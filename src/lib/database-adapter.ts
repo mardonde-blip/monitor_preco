@@ -263,7 +263,7 @@ export class DatabaseAdapter {
     store?: string;
   }): Promise<Product | null> {
     const dbInstance = await getDatabase();
-    return await dbInstance.updateProduct(id, updateData) as Product | null;
+    return await dbInstance.updateProduct(id, { ...updateData, user_id: userId }) as Product | null;
   }
 }
 

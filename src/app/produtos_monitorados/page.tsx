@@ -471,12 +471,12 @@ export default function ProductsPage() {
                           </div>
                           <div className="flex items-center space-x-1">
                             <span>🎯</span>
-                            <span>Alvo: R$ {product.target_price.toFixed(2)}</span>
+                            <span>Alvo: R$ {Number(product.target_price).toFixed(2)}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <span>💰</span>
                             <span>
-                              Atual: {product.current_price ? `R$ ${product.current_price.toFixed(2)}` : 'Verificando...'}
+                              Atual: {product.current_price ? `R$ ${Number(product.current_price).toFixed(2)}` : 'Verificando...'}
                             </span>
                           </div>
                         </div>
@@ -556,7 +556,7 @@ export default function ProductsPage() {
                   <strong>Produto:</strong> {editingProduct.name}
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  <strong>Preço atual:</strong> R$ {editingProduct.target_price.toFixed(2)}
+                  <strong>Preço atual:</strong> {editingProduct.current_price ? `R$ ${Number(editingProduct.current_price).toFixed(2)}` : 'Verificando...'}
                 </p>
               </div>
 

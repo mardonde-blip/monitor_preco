@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Retornar usuário sem senha
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { senha: _senha, ...userWithoutPassword } = typedNewUser;
     // _senha é removida intencionalmente para segurança
 

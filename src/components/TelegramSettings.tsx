@@ -163,7 +163,7 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
                 type="password"
                 id="botToken"
                 name="botToken"
-                value={formData.botToken}
+                value={formData.botToken || ''}
                 onChange={handleChange}
                 required={formData.enabled}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -182,7 +182,7 @@ export default function TelegramSettings({ settings, onUpdateSettings }: Telegra
                 type="text"
                 id="chatId"
                 name="chatId"
-                value={formData.chatId}
+                value={formData.chatId || ''}
                 onChange={handleChange}
                 required={formData.enabled}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

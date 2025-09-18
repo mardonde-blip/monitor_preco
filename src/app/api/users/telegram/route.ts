@@ -82,6 +82,7 @@ export async function PUT(request: NextRequest) {
 
     // Retornar usuário sem senha
     const typedUpdatedUser = updatedUser as { senha: string; [key: string]: unknown };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { senha: _, ...userWithoutPassword } = typedUpdatedUser;
 
     return NextResponse.json({
