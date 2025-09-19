@@ -39,9 +39,10 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [templateValidation, setTemplateValidation] = useState<{valid: boolean; errors: string[]} | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error'; text: string} | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCheckingPrices, setIsCheckingPrices] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Carregar configuração existente
   const loadConfig = useCallback(async () => {
@@ -53,7 +54,11 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
       
       if (response.ok) {
         const data = await response.json();
-        setConfig(data);
+        // Mapear notifications_enabled para is_enabled para compatibilidade
+        setConfig({
+          ...data,
+          is_enabled: data.notifications_enabled || data.is_enabled || false
+        });
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
         setMessage({ type: 'error', text: `Erro ao carregar: ${errorData.error}` });
@@ -74,6 +79,15 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
     try {
       setIsSaving(true);
       setMessage(null);
+      
+      // Validar se está habilitado mas sem token/chat_id
+      if (config.is_enabled && (!config.bot_token || !config.chat_id)) {
+        setMessage({ 
+          type: 'error', 
+          text: 'Token do bot e Chat ID são obrigatórios quando as notificações estão ativadas' 
+        });
+        return;
+      }
       
       const response = await fetch('/api/telegram/config', {
         method: 'POST',
@@ -129,6 +143,38 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
       setMessage({ type: 'error', text: 'Erro ao testar configuração' });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleManualCheck = async () => {
+    try {
+      setIsCheckingPrices(true);
+      setMessage(null);
+      
+      const response = await fetch('/api/scheduler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'manual'
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: 'Verificação manual iniciada! Você receberá notificações no Telegram se algum produto atingir o preço alvo.' 
+        });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Erro ao executar verificação manual' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Erro ao executar verificação manual' });
+    } finally {
+      setIsCheckingPrices(false);
     }
   };
 
@@ -420,6 +466,24 @@ export default function UserTelegramConfig({ userId }: UserTelegramConfigProps) 
             }}
           >
             {isTesting ? '🔄 Testando...' : '🧪 Testar Configuração'}
+          </button>
+          
+          <button
+            onClick={handleManualCheck}
+            disabled={isCheckingPrices || !config.is_enabled || !config.bot_token || !config.chat_id}
+            style={{
+              padding: '0.75rem 1.5rem',
+              border: '2px solid #f59e0b',
+              backgroundColor: 'white',
+              color: '#f59e0b',
+              borderRadius: '6px',
+              cursor: (isCheckingPrices || !config.is_enabled || !config.bot_token || !config.chat_id) ? 'not-allowed' : 'pointer',
+              opacity: (isCheckingPrices || !config.is_enabled || !config.bot_token || !config.chat_id) ? 0.5 : 1,
+              fontWeight: '500',
+              fontSize: '0.95rem'
+            }}
+          >
+            {isCheckingPrices ? '🔄 Verificando...' : '🔍 Verificação Manual'}
           </button>
           
           <button

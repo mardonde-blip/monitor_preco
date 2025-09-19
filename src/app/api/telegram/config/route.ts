@@ -76,18 +76,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Testar configurações
-      try {
-        const telegramNotifier = new TelegramNotifier();
-        await telegramNotifier.initialize(botToken, chatId);
-        
-        // Testar envio de mensagem
-        await telegramNotifier.sendTestMessage();
-      } catch (error) {
-        return NextResponse.json(
-          { error: 'Configurações do Telegram inválidas: ' + (error as Error).message },
-          { status: 400 }
-        );
+      // Testar configurações apenas se ambos estão preenchidos
+      if (botToken && chatId) {
+        try {
+          const telegramNotifier = new TelegramNotifier();
+          await telegramNotifier.initialize(botToken, chatId);
+          
+          // Testar envio de mensagem
+          await telegramNotifier.sendTestMessage();
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Configurações do Telegram inválidas: ' + (error as Error).message },
+            { status: 400 }
+          );
+        }
       }
     }
 
