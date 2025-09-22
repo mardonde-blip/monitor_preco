@@ -126,24 +126,26 @@ export default function Dashboard() {
               <div className="text-lg text-gray-600">
                  Olá, <span className="font-medium">{user?.nome_completo?.split(' ')[0]}</span>
                </div>
-              <a
-                href="/produtos_monitorados"
+              <button
+                onClick={() => router.push('/produtos_monitorados')}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2"
               >
                 <span>📊</span>
                 <span>Produtos Monitorados</span>
-              </a>
-               <a
-                 href="/telegram-config"
-                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
+              </button>
+               <button
+                 onClick={() => router.push('/telegram-config')}
+                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0 flex items-center space-x-1"
                >
-                 ⚙️ Configurar Telegram
-               </a>
+                 <span>⚙️</span>
+                 <span>Configurar Telegram</span>
+               </button>
                <button
                  onClick={handleLogout}
-                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0"
+                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium flex-shrink-0 flex items-center space-x-1"
                >
-                 Sair
+                 <span>🚪</span>
+                 <span>Sair</span>
                </button>
              </div>
           </div>
