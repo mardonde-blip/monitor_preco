@@ -184,6 +184,7 @@ export async function updateProduct(productId: number, userId: number, updateDat
   target_price?: number;
   current_price?: number;
   store?: string;
+  is_active?: boolean;
 }) {
   // Verificar se updateData existe
   if (!updateData) {
@@ -213,6 +214,10 @@ export async function updateProduct(productId: number, userId: number, updateDat
   if (updateData.store !== undefined) {
     setParts.push(`store = $${paramIndex++}`);
     values.push(updateData.store);
+  }
+  if (updateData.is_active !== undefined) {
+    setParts.push(`is_active = $${paramIndex++}`);
+    values.push(updateData.is_active);
   }
 
   if (setParts.length === 0) {
