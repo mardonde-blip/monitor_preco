@@ -126,6 +126,7 @@ export default function ProductsPage() {
     try {
       console.log('Atualizando produto:', editingProduct.id, 'para preço:', newPrice);
       
+      // Garantir que estamos enviando todos os campos necessários
       const response = await fetch('/api/products', {
         method: 'PUT',
         headers: {
@@ -136,7 +137,8 @@ export default function ProductsPage() {
           name: editingProduct.name,
           url: editingProduct.url,
           target_price: newPrice,
-          store: editingProduct.store
+          store: editingProduct.store,
+          is_active: editingProduct.is_active // Incluir o status atual
         }),
       });
 
