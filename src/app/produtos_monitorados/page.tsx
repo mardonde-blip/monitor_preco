@@ -124,6 +124,8 @@ export default function ProductsPage() {
     }
 
     try {
+      console.log('Atualizando produto:', editingProduct.id, 'para preço:', newPrice);
+      
       const response = await fetch('/api/products', {
         method: 'PUT',
         headers: {
@@ -134,10 +136,12 @@ export default function ProductsPage() {
           name: editingProduct.name,
           url: editingProduct.url,
           target_price: newPrice,
-          store: editingProduct.store,
-          is_active: editingProduct.is_active
+          store: editingProduct.store
         }),
       });
+
+      const responseData = await response.json();
+      console.log('Resposta da API:', responseData);
 
       if (response.ok) {
         showNotification('💰 Preço alvo atualizado com sucesso!', 'success');
@@ -145,8 +149,7 @@ export default function ProductsPage() {
         setEditPrice('');
         loadProducts(); // Recarregar a lista
       } else {
-        const errorData = await response.json();
-        showNotification(`Erro ao atualizar preço: ${errorData.error || 'Erro desconhecido'}`, 'error');
+        showNotification(`Erro ao atualizar preço: ${responseData.error || 'Erro desconhecido'}`, 'error');
       }
     } catch (error) {
       console.error('Erro ao atualizar preço:', error);
