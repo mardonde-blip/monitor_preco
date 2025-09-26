@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationSettings } from '@/types';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
 
 // Função para obter configurações do banco
 async function getSettings(): Promise<NotificationSettings> {
   try {
+    const DatabaseAdapter = getDatabaseAdapter();
     const enabled = await DatabaseAdapter.getSetting('notifications_enabled');
     const botToken = await DatabaseAdapter.getSetting('telegram_bot_token');
     const chatId = await DatabaseAdapter.getSetting('telegram_chat_id');
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Salvar no banco de dados
+    const DatabaseAdapter = getDatabaseAdapter();
     if (updatedSettings.enabled !== undefined) {
       await DatabaseAdapter.setSetting('notifications_enabled', updatedSettings.enabled.toString());
     }
@@ -121,9 +123,10 @@ export async function PUT(request: NextRequest) {
     }
     
     // Salvar todas as configurações no banco
-    await DatabaseAdapter.setSetting('notifications_enabled', updatedSettings.enabled.toString());
-    await DatabaseAdapter.setSetting('telegram_bot_token', updatedSettings.telegram?.botToken || '');
-    await DatabaseAdapter.setSetting('telegram_chat_id', updatedSettings.telegram?.chatId || '');
+    const DatabaseAdapter2 = getDatabaseAdapter();
+    await DatabaseAdapter2.setSetting('notifications_enabled', updatedSettings.enabled.toString());
+    await DatabaseAdapter2.setSetting('telegram_bot_token', updatedSettings.telegram?.botToken || '');
+    await DatabaseAdapter2.setSetting('telegram_chat_id', updatedSettings.telegram?.chatId || '');
     
     console.log('✅ Configurações substituídas completamente');
     
@@ -138,7 +141,7 @@ export async function PUT(request: NextRequest) {
 }
 
 // Função para verificar se as notificações estão habilitadas e configuradas
-export async function areNotificationsEnabled(): Promise<boolean> {
+async function areNotificationsEnabled(): Promise<boolean> {
   const settings = await getSettings();
   return settings.enabled && 
          !!(settings.telegram.botToken && 

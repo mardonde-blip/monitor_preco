@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Iniciando POST /api/products');
     
     // Verificar autenticação
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('userId');
     
     if (!userIdCookie) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         // Fallback para Puppeteer se HTTP falhar
         console.log('⚠️ HTTP falhou, tentando com Puppeteer...');
         const scraper = createPriceScraper();
-        const puppeteerResult = await scraper.scrapePrice(url);
+        const puppeteerResult = await scraper.scrapePriceAuto(url);
         
         if (puppeteerResult.success && puppeteerResult.price && puppeteerResult.price > 0) {
           currentPrice = puppeteerResult.price;
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       url: url.trim(),
       target_price,
-      current_price: currentPrice,
+      current_price: currentPrice || undefined,
       store: store.trim()
     });
 
@@ -241,7 +241,7 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Erro ao atualizar produto:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

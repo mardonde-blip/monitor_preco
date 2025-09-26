@@ -66,7 +66,7 @@ function getPool(): Pool {
   return pool;
 }
 
-async function query(text: string, params?: any[]) {
+async function query(text: string, params?: unknown[]): Promise<{ rows: unknown[] }> {
   const client = getPool();
   return client.query(text, params);
 }
@@ -132,7 +132,7 @@ async function updateProductPrice(productId: number, newPrice: number): Promise<
 
 async function updateProduct(productId: number, userId: number, updateData: Partial<Product>): Promise<Product> {
   const setParts: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let paramIndex = 1;
 
   if (updateData.name !== undefined) {
@@ -168,7 +168,7 @@ async function updateProduct(productId: number, userId: number, updateData: Part
   values.push(productId, userId);
 
   const queryText = `UPDATE monitored_products SET ${setParts.join(', ')} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
-  const result = await query(queryText, values);
+  const result = await query(queryText, values) as { rows: Product[] };
   return result.rows[0];
 }
 
@@ -207,7 +207,7 @@ async function getUsersWithProductCounts(): Promise<unknown[]> {
   return [];
 }
 
-async function getTelegramConfig(userId: number): Promise<unknown> {
+async function getTelegramConfig(_userId: number): Promise<unknown> {
   return null;
 }
 
@@ -215,7 +215,7 @@ async function upsertTelegramConfig(configData: unknown): Promise<unknown> {
   return configData;
 }
 
-async function deleteTelegramConfig(userId: number): Promise<boolean> {
+async function deleteTelegramConfig(_userId: number): Promise<boolean> {
   return true;
 }
 
