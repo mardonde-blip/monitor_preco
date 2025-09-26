@@ -36,7 +36,7 @@ interface DatabaseInterface {
   createProduct: (productData: unknown) => Promise<unknown>;
   getProductsByUserId: (userId: number) => Promise<unknown[]>;
   updateProductPrice: (id: number, price: number) => Promise<unknown>;
-  updateProduct: (id: number, data: unknown) => Promise<unknown>;
+  updateProduct: (id: number, userId: number, data: unknown) => Promise<unknown>;
   deleteProduct: (id: number, userId: number) => Promise<unknown>;
   getProductById: (id: number) => Promise<unknown>;
   getAllProducts: () => Promise<unknown[]>;
@@ -263,7 +263,7 @@ export class DatabaseAdapter {
     store?: string;
   }): Promise<Product | null> {
     const dbInstance = await getDatabase();
-    return await dbInstance.updateProduct(id, { ...updateData, user_id: userId }) as Product | null;
+    return await dbInstance.updateProduct(id, userId, updateData) as Product | null;
   }
 }
 

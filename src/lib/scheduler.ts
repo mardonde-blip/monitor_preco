@@ -332,7 +332,7 @@ export class PriceMonitorScheduler {
       
       // Usar diretamente o banco de dados em vez da API para evitar problemas de autenticação
       const dbProduct = originalProduct as { user_id: number; store: string };
-      await db.updateProduct(parseInt(product.id), {
+      await db.updateProduct(parseInt(product.id), dbProduct.user_id, {
         name: product.name,
         url: product.url,
         target_price: product.targetPrice || 0,
