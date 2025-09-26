@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
 import { cookies } from 'next/headers';
 import { createPriceScraper } from '@/lib/scraper';
 import { getHttpScraper } from '@/lib/scraper-http';
@@ -26,6 +26,7 @@ export async function GET() {
     }
 
     // Buscar produtos do usuário
+    const DatabaseAdapter = getDatabaseAdapter();
     const products = await DatabaseAdapter.getProductsByUserId(userId);
 
     return NextResponse.json({ products });
@@ -41,26 +42,25 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 Iniciando POST /api/products');
+    
     // Verificar autenticação
-    const cookieStore = await cookies();
-    const userIdCookie = cookieStore.get('user_id');
+    const cookieStore = cookies();
+    const userIdCookie = cookieStore.get('userId');
     
     if (!userIdCookie) {
+      console.log('❌ Usuário não autenticado');
       return NextResponse.json(
-        { error: 'Não autenticado' },
+        { error: 'Não autorizado' },
         { status: 401 }
       );
     }
 
     const userId = parseInt(userIdCookie.value);
-    if (isNaN(userId)) {
-      return NextResponse.json(
-        { error: 'ID de usuário inválido' },
-        { status: 401 }
-      );
-    }
+    console.log('👤 Usuário autenticado:', userId);
 
     const body = await request.json();
+    console.log('📋 Dados recebidos:', body);
     const { name, url, target_price, store } = body;
 
     // Validações
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     if (!url || typeof url !== 'string' || url.trim() === '') {
       return NextResponse.json(
-        { error: 'URL do produto é obrigatória' },
+        { error: 'URL é obrigatória' },
         { status: 400 }
       );
     }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         // Fallback para Puppeteer se HTTP falhar
         console.log('⚠️ HTTP falhou, tentando com Puppeteer...');
         const scraper = createPriceScraper();
-        const puppeteerResult = await scraper.scrapeProductPage(url);
+        const puppeteerResult = await scraper.scrapePrice(url);
         
         if (puppeteerResult.success && puppeteerResult.price && puppeteerResult.price > 0) {
           currentPrice = puppeteerResult.price;
@@ -127,44 +127,30 @@ export async function POST(request: NextRequest) {
           console.log('⚠️ Não foi possível capturar o preço automaticamente');
         }
       }
-    } catch (scrapingError) {
-      console.error('❌ Erro no scraping automático:', scrapingError);
-      // Continuar mesmo se o scraping falhar
+    } catch (error) {
+      console.error('❌ Erro no scraping automático:', error);
     }
 
-    // Criar produto
-    try {
-      const newProduct = await DatabaseAdapter.createProduct({
-        user_id: userId,
-        name: name.trim(),
-        url: url.trim(),
-        target_price,
-        current_price: currentPrice ?? undefined,
-        store: store.trim()
-      });
+    // Criar produto no banco
+    const DatabaseAdapter = getDatabaseAdapter();
+    const product = await DatabaseAdapter.createProduct({
+      user_id: userId,
+      name: name.trim(),
+      url: url.trim(),
+      target_price,
+      current_price: currentPrice,
+      store: store.trim()
+    });
 
-      const message = currentPrice 
-        ? `Produto adicionado com sucesso! Preço atual capturado: R$ ${currentPrice.toFixed(2)}`
-        : 'Produto adicionado com sucesso! (Preço atual não pôde ser capturado automaticamente)';
+    console.log('✅ Produto criado com sucesso:', product);
 
-      return NextResponse.json({
-        message,
-        product: newProduct,
-        scrapingSuccess: currentPrice !== null,
-        currentPrice
-      }, { status: 201 });
-    } catch (dbError: unknown) {
-      if (dbError instanceof Error && dbError.message === 'Produto com esta URL já existe para este usuário') {
-        return NextResponse.json(
-          { error: 'Este produto já está sendo monitorado. Verifique sua lista de produtos.' },
-          { status: 409 }
-        );
-      }
-      throw dbError;
-    }
+    return NextResponse.json({
+      message: 'Produto adicionado com sucesso',
+      product
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('Erro ao criar produto:', error);
+    console.error('❌ Erro ao criar produto:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -174,11 +160,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    console.log('🔍 PUT /api/products - Iniciando atualização de produto');
+    
     // Verificar autenticação
     const cookieStore = await cookies();
     const userIdCookie = cookieStore.get('user_id');
     
     if (!userIdCookie) {
+      console.log('❌ Cookie user_id não encontrado');
       return NextResponse.json(
         { error: 'Não autenticado' },
         { status: 401 }
@@ -186,7 +175,10 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = parseInt(userIdCookie.value);
+    console.log('👤 User ID obtido:', userId);
+    
     if (isNaN(userId)) {
+      console.log('❌ User ID inválido');
       return NextResponse.json(
         { error: 'ID de usuário inválido' },
         { status: 401 }
@@ -194,31 +186,53 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, url, target_price, store } = body;
+    console.log('📋 Dados recebidos:', body);
+    const { id, name, url, target_price, store, is_active } = body;
 
     if (!id || typeof id !== 'number') {
+      console.log('❌ ID do produto inválido:', id, typeof id);
       return NextResponse.json(
         { error: 'ID do produto é obrigatório' },
         { status: 400 }
       );
     }
 
+    console.log('🔍 Verificando se produto existe e pertence ao usuário...');
     // Verificar se o produto pertence ao usuário
+    const DatabaseAdapter = getDatabaseAdapter();
     const existingProduct = await DatabaseAdapter.getProductById(id);
+    console.log('📦 Produto existente:', existingProduct);
+    
     if (!existingProduct || existingProduct.user_id !== userId) {
+      console.log('❌ Produto não encontrado ou não autorizado');
       return NextResponse.json(
         { error: 'Produto não encontrado ou não autorizado' },
         { status: 404 }
       );
     }
 
-    // Atualizar produto (implementar método update no adapter)
+    console.log('🔄 Chamando updateProduct com dados:', {
+      id,
+      userId,
+      updateData: {
+        name: name?.trim(),
+        url: url?.trim(),
+        target_price,
+        store: store?.trim(),
+        is_active
+      }
+    });
+
+    // Atualizar produto
     const updatedProduct = await DatabaseAdapter.updateProduct(id, userId, {
       name: name?.trim(),
       url: url?.trim(),
       target_price,
-      store: store?.trim()
+      store: store?.trim(),
+      is_active
     });
+
+    console.log('✅ Produto atualizado com sucesso:', updatedProduct);
 
     return NextResponse.json({
       message: 'Produto atualizado com sucesso',
@@ -226,7 +240,8 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erro ao atualizar produto:', error);
+    console.error('❌ Erro ao atualizar produto:', error);
+    console.error('Stack trace:', error.stack);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
