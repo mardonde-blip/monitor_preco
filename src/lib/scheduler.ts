@@ -5,10 +5,12 @@ import { LocalStorage } from './storage';
 import { Product, NotificationSettings } from '../types';
 import { getDatabase } from './database-adapter';
 import { sendEmail, emailTemplates } from './email';
+import { ExaProductSearch } from './exa-search';
 
 export class PriceMonitorScheduler {
   private scraper: PriceScraper;
   private telegramNotifier: TelegramNotifier;
+  private exaSearch: ExaProductSearch;
   private isRunning: boolean = false;
   private cronJob: ScheduledTask | null = null;
   private lastRun: string | null = null;
@@ -16,6 +18,7 @@ export class PriceMonitorScheduler {
   constructor() {
     this.scraper = new PriceScraper();
     this.telegramNotifier = new TelegramNotifier();
+    this.exaSearch = new ExaProductSearch();
   }
 
   /**
@@ -290,8 +293,50 @@ export class PriceMonitorScheduler {
    * Executa uma verificação manual de todos os produtos
    */
   async runManualCheck(): Promise<void> {
-    console.log('Executando verificação manual...');
-    await this.runMonitoringCycle();
+    console.log('Executando verificação manual com MCP de busca...');
+    
+    try {
+      const db = await getDatabase();
+      const productsData = await db.getAllProducts();
+      const products = productsData as Array<{id: number; name: string; url: string; target_price: number; current_price?: number; store: string}>;
+      const notificationSettings = await this.getNotificationSettings();
+      
+      if (!products.length) {
+        console.log('Nenhum produto para monitorar');
+        return;
+      }
+
+      if (!notificationSettings.enabled) {
+        console.log('Notificações desabilitadas');
+        return;
+      }
+
+      // Executa verificação manual usando MCP de busca para cada produto
+      const results = await Promise.allSettled(
+        products.map(product => this.checkProductPriceWithMCP({
+          id: product.id.toString(),
+          name: product.name,
+          url: product.url,
+          initialPrice: product.target_price,
+          currentPrice: product.current_price,
+          targetPrice: product.target_price,
+          selector: 'auto',
+          addedAt: new Date().toISOString(),
+          target_price: product.target_price,
+          current_price: product.current_price,
+          created_at: new Date().toISOString(),
+          user_id: 1
+        } as Product & {target_price: number; current_price?: number; created_at: string; user_id: number}))
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      console.log(`Verificação manual concluída: ${successful} sucessos, ${failed} falhas`);
+      
+    } catch (error) {
+      console.error('Erro na verificação manual:', error);
+    }
   }
 
   /**
@@ -347,10 +392,90 @@ export class PriceMonitorScheduler {
   }
   
   /**
-   * Busca usuários que monitoram um produto específico
+   * Verifica o preço de um produto específico usando MCP de busca
    */
-  private async getUsersForProduct(productId: string): Promise<Array<{id: number, name: string, email: string}>> {
+  private async checkProductPriceWithMCP(
+    product: Product
+  ): Promise<void> {
     try {
+      console.log(`Buscando preço atual para ${product.name} usando MCP...`);
+      
+      // Usa o MCP de busca para encontrar o preço atual do produto
+      const searchResults = await this.exaSearch.searchProducts(product.name, {
+        maxResults: 5,
+        includeText: true,
+        includeHighlights: true
+      });
+      
+      if (!searchResults.length) {
+        console.error(`Nenhum resultado encontrado para ${product.name} via MCP`);
+        return;
+      }
+      
+      // Pega o primeiro resultado (melhor score) e tenta extrair o preço
+      const bestResult = searchResults[0];
+      console.log(`Melhor resultado MCP para ${product.name}: ${bestResult.name} - Score: ${bestResult.score}`);
+      
+      // Se o resultado tem preço estimado, usa ele
+      let currentPrice = bestResult.estimatedPrice;
+      
+      // Se não tem preço estimado, tenta fazer scraping da URL encontrada
+      if (!currentPrice && bestResult.url) {
+        console.log(`Fazendo scraping da URL encontrada via MCP: ${bestResult.url}`);
+        const scrapingResult = await this.scraper.scrapePriceAuto(bestResult.url);
+        if (scrapingResult.success && scrapingResult.price !== null) {
+          currentPrice = scrapingResult.price;
+        }
+      }
+      
+      if (!currentPrice) {
+        console.error(`Não foi possível obter preço para ${product.name} via MCP`);
+        return;
+      }
+      
+      console.log(`Preço atual encontrado via MCP para ${product.name}: R$ ${currentPrice.toFixed(2)}`);
+      
+      // Atualiza o preço atual do produto no banco de dados
+      await this.updateProductViaAPI({
+        id: product.id.toString(),
+        name: product.name,
+        url: product.url,
+        initialPrice: product.targetPrice,
+        currentPrice: currentPrice,
+        targetPrice: product.targetPrice,
+        selector: '',
+        addedAt: product.addedAt,
+        userId: 1
+      } as Product);
+      
+      // Verifica se o preço atual está abaixo do preço alvo
+      const targetPrice = product.targetPrice;
+      const priceDropped = currentPrice !== null && currentPrice !== undefined && targetPrice !== null && targetPrice !== undefined && targetPrice > currentPrice;
+      
+      console.log(`${product.name}: R$ ${currentPrice.toFixed(2)} (alvo: R$ ${Number(targetPrice || 0).toFixed(2)})`);
+      
+      if (priceDropped) {
+        console.log(`🎯 ALERTA MCP: Preço de ${product.name} está abaixo do alvo! R$ ${currentPrice.toFixed(2)} < R$ ${Number(targetPrice).toFixed(2)}`);
+        
+        // Cria um produto atualizado com o novo preço para enviar o alerta
+        const updatedProduct = {
+          ...product,
+          currentPrice: currentPrice
+        };
+        
+        await this.sendPriceAlert(updatedProduct);
+      }
+      
+    } catch (error) {
+      console.error(`Erro ao verificar preço de ${product.name} via MCP:`, error);
+    }
+  }
+   
+   /**
+    * Busca usuários que monitoram um produto específico
+    */
+   private async getUsersForProduct(productId: string): Promise<Array<{id: number, name: string, email: string}>> {
+     try {
       const response = await fetch(`http://localhost:3000/api/users?productId=${productId}`);
       if (response.ok) {
         return await response.json();
