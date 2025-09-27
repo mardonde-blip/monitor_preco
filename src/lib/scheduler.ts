@@ -5,12 +5,12 @@ import { LocalStorage } from './storage';
 import { Product, NotificationSettings } from '../types';
 import { getDatabase } from './database-adapter';
 import { sendEmail, emailTemplates } from './email';
-import { ExaProductSearch } from './exa-search';
+// import { ExaProductSearch } from './exa-search'; // Temporariamente desabilitado
 
 export class PriceMonitorScheduler {
   private scraper: PriceScraper;
   private telegramNotifier: TelegramNotifier;
-  private exaSearch: ExaProductSearch;
+  // private exaSearch: ExaProductSearch; // Temporariamente desabilitado
   private isRunning: boolean = false;
   private cronJob: ScheduledTask | null = null;
   private lastRun: string | null = null;
@@ -18,7 +18,7 @@ export class PriceMonitorScheduler {
   constructor() {
     this.scraper = new PriceScraper();
     this.telegramNotifier = new TelegramNotifier();
-    this.exaSearch = new ExaProductSearch();
+    // this.exaSearch = new ExaProductSearch(); // Temporariamente desabilitado
   }
 
   /**
@@ -293,7 +293,7 @@ export class PriceMonitorScheduler {
    * Executa uma verificação manual de todos os produtos
    */
   async runManualCheck(): Promise<void> {
-    console.log('Executando verificação manual com MCP de busca...');
+    console.log('Executando verificação manual com scraper tradicional...');
     
     try {
       const db = await getDatabase();
@@ -311,9 +311,9 @@ export class PriceMonitorScheduler {
         return;
       }
 
-      // Executa verificação manual usando MCP de busca para cada produto
+      // Executa verificação manual usando scraper tradicional para cada produto
       const results = await Promise.allSettled(
-        products.map(product => this.checkProductPriceWithMCP({
+        products.map(product => this.checkProductPrice({
           id: product.id.toString(),
           name: product.name,
           url: product.url,
@@ -328,6 +328,8 @@ export class PriceMonitorScheduler {
           user_id: 1
         } as Product & {target_price: number; current_price?: number; created_at: string; user_id: number}))
       );
+      
+      await this.scraper.close();
       
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
@@ -393,7 +395,9 @@ export class PriceMonitorScheduler {
   
   /**
    * Verifica o preço de um produto específico usando MCP de busca
+   * TEMPORARIAMENTE DESABILITADO - Usando apenas scraper tradicional
    */
+  /*
   private async checkProductPriceWithMCP(
     product: Product
   ): Promise<void> {
@@ -470,6 +474,7 @@ export class PriceMonitorScheduler {
       console.error(`Erro ao verificar preço de ${product.name} via MCP:`, error);
     }
   }
+  */
    
    /**
     * Busca usuários que monitoram um produto específico
