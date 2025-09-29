@@ -19,12 +19,12 @@ export async function GET() {
         id: product.id,
         name: product.name,
         url: product.url,
-        currentPrice: product.currentPrice,
-        targetPrice: product.targetPrice,
+        current_price: product.current_price,
+        target_price: product.target_price,
         store: product.store,
-        userId: product.userId,
-        createdAt: product.createdAt,
-        updatedAt: product.updatedAt
+        user_id: product.user_id,
+        created_at: product.created_at,
+        updated_at: product.updated_at
       }))
     });
 
