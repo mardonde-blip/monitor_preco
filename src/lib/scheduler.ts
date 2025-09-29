@@ -164,9 +164,9 @@ export class PriceMonitorScheduler {
         userId: 1
       } as Product);
       
-      // Verifica se o preço atual está abaixo do preço alvo (envia notificação quando preço alvo > preço atual)
+      // Verifica se o preço atual está abaixo ou igual ao preço alvo (envia notificação quando preço atual <= preço alvo)
       const targetPrice = product.targetPrice;
-      const priceDropped = newPrice !== null && newPrice !== undefined && targetPrice !== null && targetPrice !== undefined && targetPrice > newPrice;
+      const priceDropped = newPrice !== null && newPrice !== undefined && targetPrice !== null && targetPrice !== undefined && newPrice <= targetPrice;
       
       if (priceDropped) {
         await this.sendPriceAlert(product);
