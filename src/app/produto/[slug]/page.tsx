@@ -4,10 +4,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, ExternalLink, Heart, Share2, ShoppingCart, Star, TrendingDown, TrendingUp } from 'lucide-react';
-import PriceHistory from '@/components/PriceHistory';
-import PriceAlert from '@/components/PriceAlert';
-import ProductReviews from '@/components/ProductReviews';
-import DiscountCoupons from '@/components/DiscountCoupons';
+// import PriceHistory from '@/components/PriceHistory';
+// import PriceAlert from '@/components/PriceAlert';
+// import ProductReviews from '@/components/ProductReviews';
+// import DiscountCoupons from '@/components/DiscountCoupons';
 
 interface ProductOffer {
   id: string;
@@ -392,35 +392,43 @@ export default function ProductPage() {
         {/* Additional Components */}
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <PriceHistory 
+            {/* <PriceHistory 
               productTitle={product.title}
               currentPrice={product.lowestPrice}
               productUrl={sortedOffers[0]?.url || ''}
-            />
+            /> */}
+            <h3 className="text-lg font-semibold mb-4">Histórico de Preços</h3>
+            <p className="text-gray-600">Funcionalidade temporariamente indisponível</p>
           </div>
           
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <PriceAlert 
+            {/* <PriceAlert 
               productTitle={product.title}
               currentPrice={product.lowestPrice}
               productUrl={sortedOffers[0]?.url || ''}
-            />
+            /> */}
+            <h3 className="text-lg font-semibold mb-4">Alerta de Preço</h3>
+            <p className="text-gray-600">Funcionalidade temporariamente indisponível</p>
           </div>
         </div>
 
         <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-          <ProductReviews 
+          {/* <ProductReviews 
             productTitle={product.title}
             averageRating={product.averageRating}
             totalReviews={product.totalReviews}
-          />
+          /> */}
+          <h3 className="text-lg font-semibold mb-4">Avaliações</h3>
+          <p className="text-gray-600">Funcionalidade temporariamente indisponível</p>
         </div>
 
         <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-          <DiscountCoupons 
+          {/* <DiscountCoupons 
             productTitle={product.title}
             store={sortedOffers[0]?.store || 'Lojas Parceiras'}
-          />
+          /> */}
+          <h3 className="text-lg font-semibold mb-4">Cupons de Desconto</h3>
+          <p className="text-gray-600">Funcionalidade temporariamente indisponível</p>
         </div>
       </main>
     </div>
