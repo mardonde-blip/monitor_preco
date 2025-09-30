@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+// import { DatabaseAdapter } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 
@@ -24,6 +24,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Funcionalidade de login temporariamente indisponível
+    return NextResponse.json(
+      { 
+        error: 'Sistema de login temporariamente indisponível',
+        message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+      },
+      { status: 503 }
+    );
+
+    /*
     // Buscar usuário por email
     const user = await DatabaseAdapter.getUserByEmail(email);
     
@@ -53,6 +63,7 @@ export async function POST(request: NextRequest) {
       message: 'Login realizado com sucesso',
       user: userWithoutPassword
     });
+    */
 
   } catch (error) {
     console.error('Erro no login:', error);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
+// import { getDatabase } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
-import { Pool } from 'pg';
+// import { Pool } from 'pg';
 
 export async function GET(request: Request) {
   try {
@@ -24,6 +24,16 @@ export async function GET(request: Request) {
       );
     }
 
+    // Funcionalidade de autenticação temporariamente indisponível
+    return NextResponse.json(
+      { 
+        error: 'Sistema de autenticação temporariamente indisponível',
+        message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+      },
+      { status: 503 }
+    );
+
+    /*
     // Buscar usuário no banco
     const db = await getDatabase();
     const user = await db.getUserById(parseInt(userId));
@@ -68,6 +78,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       user: userWithoutPassword
     });
+    */
 
   } catch (error) {
     console.error('Erro ao verificar autenticação:', error);
@@ -103,6 +114,15 @@ async function runDiagnostic() {
       }, { status: 200 });
     }
 
+    // Diagnóstico temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Diagnóstico temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      envInfo
+    }, { status: 503 });
+
+    /*
     // Teste de conexão PostgreSQL
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -134,6 +154,7 @@ async function runDiagnostic() {
       await pool.end();
       throw queryError;
     }
+    */
     
   } catch (error) {
     console.error('Erro no diagnóstico:', error);

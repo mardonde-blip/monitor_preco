@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/database-postgres';
+// import { query } from '@/lib/database-postgres';
 
 export async function GET() {
   try {
     console.log('🔍 Verificando estrutura da tabela user_telegram_config...');
     
+    // Funcionalidade de verificação de tabela temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      message: 'Sistema de verificação de tabela temporariamente indisponível',
+      error: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      columns: [],
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+    
+    /*
     const result = await query(`
       SELECT column_name, data_type, is_nullable, column_default 
       FROM information_schema.columns 
@@ -33,6 +43,7 @@ export async function GET() {
       columns,
       timestamp: new Date().toISOString()
     });
+    */
     
   } catch (error) {
     console.error('❌ Erro ao verificar tabela:', error);

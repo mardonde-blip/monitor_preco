@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
+// import { getDatabase } from '@/lib/database-adapter';
 
 // POST - Redefinir senha com token
 export async function POST(request: NextRequest) {
@@ -49,6 +49,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Funcionalidade de reset de senha temporariamente indisponível
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Sistema de reset de senha temporariamente indisponível',
+        message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+      },
+      { status: 503 }
+    );
+
+    /*
     // Buscar usuário
     const db = await getDatabase();
     const user = await db.getUserById(tokenData.userId);
@@ -100,6 +111,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    */
 
   } catch (error: unknown) {
     console.error('Erro ao redefinir senha:', error);

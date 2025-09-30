@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createPriceScraper } from '@/lib/scraper';
+// import { createPriceScraper } from '@/lib/scraper';
 
 export async function POST() {
   try {
+    // Funcionalidade de limpeza de cache temporariamente indisponível
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Sistema de limpeza de cache temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+    }, { status: 503 });
+    
+    /*
     const scraper = createPriceScraper();
     scraper.clearAllCache();
     
@@ -10,6 +18,7 @@ export async function POST() {
       success: true, 
       message: 'Cache limpo com sucesso' 
     });
+    */
   } catch (error) {
     console.error('Erro ao limpar cache:', error);
     return NextResponse.json(
@@ -20,5 +29,8 @@ export async function POST() {
 }
 
 export async function GET() {
-  return NextResponse.json({ message: 'API de limpeza de cache disponível' });
+  return NextResponse.json({ 
+    message: 'API de limpeza de cache temporariamente indisponível',
+    status: 'Em manutenção'
+  });
 }
