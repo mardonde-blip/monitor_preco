@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, MessageCircle, Shield, Info, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Check, X, TestTube, Shield, CheckCircle, XCircle, MessageCircle, Info } from 'lucide-react';
 
 interface TelegramConfig {
   hasToken: boolean;
@@ -18,7 +17,8 @@ interface TelegramConfig {
 }
 
 export default function ConfiguracoesPage() {
-  const { data: session, status } = useSession();
+  // TODO: Implementar autenticação real
+  // const { data: session, status } = useSession();
   const [config, setConfig] = useState<TelegramConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,10 +33,15 @@ export default function ConfiguracoesPage() {
 
   // Carregar configurações atuais
   useEffect(() => {
-    if (status === 'authenticated') {
-      loadConfig();
-    }
-  }, [status]);
+    // TODO: Implementar verificação de autenticação real
+    // if (loading) return;
+    // if (!session) {
+    //   router.push('/login');
+    //   return;
+    // }
+    
+    loadConfig();
+  }, []);
 
   const loadConfig = async () => {
     try {
@@ -150,23 +155,32 @@ export default function ConfiguracoesPage() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  // TODO: Implementar verificação de autenticação real
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <Loader2 className="h-8 w-8 animate-spin" />
+  //     </div>
+  //   );
+  // }
+
+  // if (!session) {
+  //   return (
+  //     <div className="container mx-auto p-6">
+  //       <Alert>
+  //         <Shield className="h-4 w-4" />
+  //         <AlertDescription>
+  //           Você precisa estar logado para acessar as configurações.
+  //         </AlertDescription>
+  //       </Alert>
+  //     </div>
+  //   );
+  // }
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert>
-          <Shield className="h-4 w-4" />
-          <AlertDescription>
-            Você precisa estar logado para acessar as configurações.
-          </AlertDescription>
-        </Alert>
       </div>
     );
   }
@@ -286,7 +300,7 @@ export default function ConfiguracoesPage() {
                     3. Copie o token fornecido<br />
                     4. Envie uma mensagem para seu bot<br />
                     5. Acesse: https://api.telegram.org/bot&lt;SEU_TOKEN&gt;/getUpdates<br />
-                    6. Procure pelo "chat":{"id": NUMERO} e use esse número como Chat ID
+                    6. Procure pelo &quot;chat&quot;:&#123;&quot;id&quot;: NUMERO&#125; e use esse número como Chat ID
                   </AlertDescription>
                 </Alert>
 

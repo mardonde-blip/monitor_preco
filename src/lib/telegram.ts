@@ -18,47 +18,46 @@ export class TelegramNotifier {
     this.bot = new TelegramBot(botToken, { polling: false });
   }
 
-  // Novo método para enviar notificação para usuário específico
-  async sendPriceAlertToUser(userId: string, product: Product, oldPrice: number, newPrice: number): Promise<void> {
+  async sendPriceAlertToUser(userId: string, product: Product, currentPrice: number, targetPrice: number): Promise<boolean> {
     try {
-      const db = await getDatabase();
+      // TODO: Implementar busca real no banco de dados
+      // const userConfig = await prisma.userTelegramConfig.findUnique({
+      //   where: { userId, enabled: true }
+      // });
       
-      // Buscar configurações do Telegram do usuário
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        select: {
-          telegramBotToken: true,
-          telegramChatId: true,
-          telegramEnabled: true
-        }
-      });
+      // Simulação temporária - usar configuração em memória
+      // Em produção, isso deve vir do banco de dados
+      const userConfig = {
+        botToken: process.env.TELEGRAM_BOT_TOKEN,
+        chatId: process.env.TELEGRAM_CHAT_ID,
+        enabled: !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID)
+      };
 
-      if (!user || !user.telegramEnabled || !user.telegramBotToken || !user.telegramChatId) {
-        console.log(`❌ Usuário ${userId} não tem Telegram configurado ou habilitado`);
-        return;
+      if (!userConfig || !userConfig.enabled || !userConfig.botToken || !userConfig.chatId) {
+        console.log(`Usuário ${userId} não tem Telegram configurado ou habilitado`);
+        return false;
       }
 
-      // Criar bot específico para este usuário
-      const userBot = new TelegramBot(user.telegramBotToken, { polling: false });
-      
-      const discount = ((oldPrice - newPrice) / oldPrice * 100).toFixed(1);
-      const message = this.formatPriceAlertMessage(product, oldPrice, newPrice, discount);
+      // Criar bot individual para este usuário
+      const userBot = new TelegramBot(userConfig.botToken, { polling: false });
 
-      // Log para debug do desconto
-      console.log(`\n🎯 CÁLCULO DO DESCONTO (Usuário ${userId}):`);
-      console.log(`   Produto: ${product.name}`);
-      console.log(`   Preço anterior: R$ ${oldPrice.toFixed(2)}`);
-      console.log(`   Preço atual: R$ ${newPrice.toFixed(2)}`);
-      console.log(`   Desconto calculado: ${discount}%`);
+      const message = `🚨 *Alerta de Preço*\n\n` +
+        `📦 *Produto:* ${product.name}\n` +
+        `💰 *Preço Atual:* R$ ${currentPrice.toFixed(2)}\n` +
+        `🎯 *Preço Alvo:* R$ ${targetPrice.toFixed(2)}\n` +
+        `📉 *Economia:* R$ ${(targetPrice - currentPrice).toFixed(2)}\n\n` +
+        `🔗 [Ver Produto](${product.url})`;
 
-      await userBot.sendMessage(user.telegramChatId, message, {
-        parse_mode: 'HTML',
+      await userBot.sendMessage(userConfig.chatId, message, {
+        parse_mode: 'Markdown',
         disable_web_page_preview: false
       });
-      
-      console.log(`📱 Mensagem enviada para usuário ${userId}: Desconto ${discount}% para ${product.name}`);
+
+      console.log(`Alerta enviado para usuário ${userId} via Telegram`);
+      return true;
     } catch (error) {
-      console.error(`Erro ao enviar notificação para usuário ${userId}:`, error);
+      console.error(`Erro ao enviar alerta para usuário ${userId}:`, error);
+      return false;
     }
   }
 
