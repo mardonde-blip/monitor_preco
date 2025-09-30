@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@playwright/test": "^1.55.0",
+    "@prisma/client": "^6.16.2",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.6",
     "@sparticuz/chromium-min": "^138.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.1",
@@ -17,10 +21,13 @@
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dotenv": "^17.2.1",
     "exa-js": "^1.9.3",
     "lucide-react": "^0.541.0",
     "next": "15.5.0",
+    "next-auth": "^4.24.11",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.66.0",
     "nodemailer": "^7.0.6",
@@ -29,7 +36,8 @@
     "puppeteer": "^24.15.0",
     "puppeteer-core": "^24.15.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
