@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import UserTelegramConfig from '@/components/UserTelegramConfig';
+// import UserTelegramConfig from '@/components/UserTelegramConfig';
 
 interface User {
   id: number;
@@ -144,7 +144,29 @@ export default function TelegramConfigPage() {
               </ul>
             </div>
 
-            <UserTelegramConfig userId={userId} />
+            {/* <UserTelegramConfig userId={userId} /> */}
+            <div style={{ 
+              backgroundColor: '#fff', 
+              border: '1px solid #ddd', 
+              borderRadius: '8px', 
+              padding: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>⚙️ Configuração do Telegram</h2>
+              <p style={{ color: '#666', marginBottom: '1rem' }}>
+                Esta funcionalidade está temporariamente indisponível. Estamos trabalhando para restaurá-la em breve.
+              </p>
+              <div style={{ 
+                backgroundColor: '#f8f9fa', 
+                border: '1px solid #dee2e6', 
+                borderRadius: '4px', 
+                padding: '1rem',
+                textAlign: 'center'
+              }}>
+                <span style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'block' }}>🔧</span>
+                <p style={{ margin: 0, color: '#6c757d' }}>Configuração do Telegram em manutenção</p>
+              </div>
+            </div>
 
              <div style={{ 
                backgroundColor: '#fff', 

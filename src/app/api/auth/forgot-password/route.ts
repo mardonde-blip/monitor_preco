@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
-import { sendEmail, emailTemplates } from '@/lib/email';
+// import { getDatabase } from '@/lib/database-adapter';
+// import { sendEmail, emailTemplates } from '@/lib/email';
 import crypto from 'crypto';
-import type { ResetToken } from '@/types/auth';
+// import type { ResetToken } from '@/types/auth';
 
 // POST - Solicitar reset de senha
 export async function POST(request: NextRequest) {
@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Funcionalidade temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Funcionalidade de reset de senha temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+    }, { status: 503 });
+
+    /*
     // Buscar usuário pelo email
     const db = await getDatabase();
     const userData = await db.getUserByEmail(email.toLowerCase());
@@ -87,6 +95,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Se o email estiver cadastrado, você receberá as instruções para redefinir sua senha.'
     });
+    */
 
   } catch (error: unknown) {
     console.error('Erro ao processar solicitação de reset:', error);

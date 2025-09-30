@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
+// import { getDatabase } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 
 // Verificar se o usuário é administrador
@@ -19,6 +19,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Funcionalidade temporariamente indisponível
+    return NextResponse.json(
+      { 
+        error: 'Estatísticas administrativas temporariamente indisponíveis',
+        message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.'
+      },
+      { status: 503 }
+    );
+
+    /* 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const db = await getDatabase();
@@ -62,6 +72,7 @@ export async function GET(request: NextRequest) {
         };
         return NextResponse.json(allStats);
     }
+    */
 
   } catch (error) {
     console.error('Erro ao obter estatísticas administrativas:', error);

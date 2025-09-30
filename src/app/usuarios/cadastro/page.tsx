@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import UserForm from '@/components/UserForm';
-import { User } from '@/lib/database-adapter';
+// import UserForm from '@/components/UserForm';
+// import { User } from '@/lib/database-adapter';
 
 export default function CadastroUsuario() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const router = useRouter();
 
-  const handleSubmit = async (userData: Omit<User, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleSubmit = async (userData: any) => {
     setIsLoading(true);
     setMessage(null);
 
@@ -83,11 +83,26 @@ export default function CadastroUsuario() {
         )}
 
         {/* Formulário */}
-        <UserForm
+        {/* <UserForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isLoading={isLoading}
-        />
+        /> */}
+        
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+          <div className="text-center">
+            <div className="mb-4">
+              <span className="text-6xl">👤</span>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Cadastro de Usuário</h2>
+            <p className="text-gray-600 mb-4">
+              Esta funcionalidade está temporariamente indisponível. Estamos trabalhando para restaurá-la em breve.
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+              <p className="text-yellow-800 text-sm">🔧 Formulário em manutenção</p>
+            </div>
+          </div>
+        </div>
 
         {/* Link para voltar */}
         <div className="text-center mt-6">
