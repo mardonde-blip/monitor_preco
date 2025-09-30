@@ -18,6 +18,50 @@ export class TelegramNotifier {
     this.bot = new TelegramBot(botToken, { polling: false });
   }
 
+  // Novo método para enviar notificação para usuário específico
+  async sendPriceAlertToUser(userId: string, product: Product, oldPrice: number, newPrice: number): Promise<void> {
+    try {
+      const db = await getDatabase();
+      
+      // Buscar configurações do Telegram do usuário
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: {
+          telegramBotToken: true,
+          telegramChatId: true,
+          telegramEnabled: true
+        }
+      });
+
+      if (!user || !user.telegramEnabled || !user.telegramBotToken || !user.telegramChatId) {
+        console.log(`❌ Usuário ${userId} não tem Telegram configurado ou habilitado`);
+        return;
+      }
+
+      // Criar bot específico para este usuário
+      const userBot = new TelegramBot(user.telegramBotToken, { polling: false });
+      
+      const discount = ((oldPrice - newPrice) / oldPrice * 100).toFixed(1);
+      const message = this.formatPriceAlertMessage(product, oldPrice, newPrice, discount);
+
+      // Log para debug do desconto
+      console.log(`\n🎯 CÁLCULO DO DESCONTO (Usuário ${userId}):`);
+      console.log(`   Produto: ${product.name}`);
+      console.log(`   Preço anterior: R$ ${oldPrice.toFixed(2)}`);
+      console.log(`   Preço atual: R$ ${newPrice.toFixed(2)}`);
+      console.log(`   Desconto calculado: ${discount}%`);
+
+      await userBot.sendMessage(user.telegramChatId, message, {
+        parse_mode: 'HTML',
+        disable_web_page_preview: false
+      });
+      
+      console.log(`📱 Mensagem enviada para usuário ${userId}: Desconto ${discount}% para ${product.name}`);
+    } catch (error) {
+      console.error(`Erro ao enviar notificação para usuário ${userId}:`, error);
+    }
+  }
+
   async sendPriceAlert(product: Product, oldPrice: number, newPrice: number): Promise<void> {
     if (!this.bot || !this.config) {
       throw new Error('Telegram not initialized');

@@ -184,13 +184,17 @@ export class PriceMonitorScheduler {
   }
 
   /**
-   * Envia alerta de preço via Telegram e Email
+   * Envia alerta de preço via Telegram e Email para todos os usuários que monitoram o produto
    */
   private async sendPriceAlert(product: Product): Promise<void> {
     try {
-      const notificationSettings = await this.getNotificationSettings();
+      const db = await getDatabase();
       
-      if (!notificationSettings.enabled) {
+      // Buscar todos os usuários que monitoram este produto
+      const usersForProduct = await db.getUsersForProduct(parseInt(product.id));
+      
+      if (!usersForProduct || usersForProduct.length === 0) {
+        console.log(`Nenhum usuário encontrado para o produto ${product.name}`);
         return;
       }
       
@@ -208,45 +212,55 @@ export class PriceMonitorScheduler {
         previousPrice = product.currentPrice! * 1.01; // 1% maior
       }
       
-      // Enviar notificação via Telegram
-      try {
-        this.telegramNotifier.init({
-          botToken: notificationSettings.telegram.botToken,
-          chatId: notificationSettings.telegram.chatId
-        });
-        
-        await this.telegramNotifier.sendPriceAlert(
-          {
-            id: product.id.toString(),
-            name: product.name,
-            url: product.url,
-            initialPrice: product.targetPrice,
-            currentPrice: product.currentPrice,
-            targetPrice: product.targetPrice,
-            selector: '',
-            addedAt: product.addedAt
-          } as Product,
-          previousPrice || 0,
-          product.currentPrice || 0
-        );
-        
-        console.log(`Alerta Telegram enviado para ${product.name}`);
-      } catch (telegramError) {
-        console.error('Erro ao enviar alerta via Telegram:', telegramError);
+      // Enviar notificações para cada usuário
+      for (const user of usersForProduct) {
+        try {
+          // Enviar notificação via Telegram (usando configuração individual do usuário)
+          await this.telegramNotifier.sendPriceAlertToUser(
+            user.id,
+            {
+              id: product.id.toString(),
+              name: product.name,
+              url: product.url,
+              initialPrice: product.targetPrice,
+              currentPrice: product.currentPrice,
+              targetPrice: product.targetPrice,
+              selector: '',
+              addedAt: product.addedAt
+            } as Product,
+            previousPrice || 0,
+            product.currentPrice || 0
+          );
+          
+          // Enviar notificação via Email (se configurado)
+          if (user.email) {
+            await this.sendEmailAlert(
+              {
+                id: product.id.toString(),
+                name: product.name,
+                url: product.url,
+                initialPrice: product.targetPrice,
+                currentPrice: product.currentPrice,
+                targetPrice: product.targetPrice,
+                selector: '',
+                addedAt: product.addedAt
+              } as Product,
+              previousPrice || 0,
+              product.currentPrice || 0,
+              user.email
+            );
+          }
+          
+          console.log(`✅ Alertas enviados para usuário ${user.email} - ${product.name}`);
+        } catch (userError) {
+          console.error(`❌ Erro ao enviar alerta para usuário ${user.email}:`, userError);
+        }
       }
       
-      // Enviar notificação via Email
-      try {
-        await this.sendEmailAlert(product, previousPrice || 0, product.currentPrice || 0);
-        console.log(`Alerta Email enviado para ${product.name}`);
-      } catch (emailError) {
-        console.error('Erro ao enviar alerta via Email:', emailError);
-      }
-      
-      console.log(`Alertas enviados para ${product.name} (desconto calculado com base em R$ ${previousPrice !== null && previousPrice !== undefined ? previousPrice.toFixed(2) : 'N/A'} -> R$ ${Number(product.currentPrice || 0).toFixed(2)})`);
+      console.log(`📢 Alertas processados para ${usersForProduct.length} usuário(s) do produto ${product.name}`);
       
     } catch (error) {
-      console.error('Erro ao enviar alerta:', error);
+      console.error('Erro ao enviar alertas:', error);
     }
   }
   
