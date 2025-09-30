@@ -188,10 +188,14 @@ export class PriceMonitorScheduler {
    */
   private async sendPriceAlert(product: Product): Promise<void> {
     try {
-      const db = await getDatabase();
+      console.log(`🚨 Enviando alerta de preço para ${product.name}`);
       
-      // Buscar todos os usuários que monitoram este produto
-      const usersForProduct = await db.getUsersForProduct(parseInt(product.id));
+      // TODO: Implementar busca real de usuários no banco de dados
+      // const db = await getDatabase();
+      // const usersForProduct = await db.getUsersForProduct(parseInt(product.id));
+
+      // Simulação temporária - usar lista fixa de usuários
+      const usersForProduct = [{ id: 'temp-user-id', email: 'user@example.com' }];
       
       if (!usersForProduct || usersForProduct.length === 0) {
         console.log(`Nenhum usuário encontrado para o produto ${product.name}`);
@@ -215,8 +219,8 @@ export class PriceMonitorScheduler {
       // Enviar notificações para cada usuário
       for (const user of usersForProduct) {
         try {
-          // Enviar notificação via Telegram (usando configuração individual do usuário)
-          await this.telegramNotifier.sendPriceAlertToUser(
+          // Telegram
+          const telegramSent = await this.telegramNotifier.sendPriceAlertToUser(
             user.id,
             {
               id: product.id.toString(),
@@ -232,35 +236,22 @@ export class PriceMonitorScheduler {
             product.currentPrice || 0
           );
           
-          // Enviar notificação via Email (se configurado)
-          if (user.email) {
-            await this.sendEmailAlert(
-              {
-                id: product.id.toString(),
-                name: product.name,
-                url: product.url,
-                initialPrice: product.targetPrice,
-                currentPrice: product.currentPrice,
-                targetPrice: product.targetPrice,
-                selector: '',
-                addedAt: product.addedAt
-              } as Product,
-              previousPrice || 0,
-              product.currentPrice || 0,
-              user.email
-            );
-          }
+          // Email (se configurado)
+          // TODO: Implementar notificação por email
+          // if (user.emailEnabled) {
+          //   await this.emailNotifier.sendPriceAlert(user.email, product, currentPrice, targetPrice);
+          // }
           
-          console.log(`✅ Alertas enviados para usuário ${user.email} - ${product.name}`);
+          console.log(`✅ Alerta enviado para usuário ${user.id} (Telegram: ${telegramSent ? 'Sim' : 'Não'})`);
         } catch (userError) {
-          console.error(`❌ Erro ao enviar alerta para usuário ${user.email}:`, userError);
+          console.error(`❌ Erro ao enviar alerta para usuário ${user.id}:`, userError);
         }
       }
       
       console.log(`📢 Alertas processados para ${usersForProduct.length} usuário(s) do produto ${product.name}`);
       
     } catch (error) {
-      console.error('Erro ao enviar alertas:', error);
+      console.error('Erro ao enviar alertas de preço:', error);
     }
   }
   
