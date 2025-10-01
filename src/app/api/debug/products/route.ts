@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
+// import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
 
 export async function GET() {
   try {
     console.log('🔍 Debug: Listando todos os produtos');
     
+    // Funcionalidade de debug de produtos temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de debug de produtos temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      total: 0,
+      products: []
+    }, { status: 503 });
+    
+    /*
     const DatabaseAdapter = getDatabaseAdapter();
     
     // Buscar todos os produtos (sem filtro de usuário para debug)
@@ -27,6 +37,7 @@ export async function GET() {
         updated_at: product.updated_at
       }))
     });
+    */
 
   } catch (error) {
     console.error('❌ Erro no debug de produtos:', error);

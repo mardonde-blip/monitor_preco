@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
+// import { getDatabase } from '@/lib/database-adapter';
 
 // Rota para inicializar o banco de dados PostgreSQL
 export async function GET() {
@@ -8,6 +8,16 @@ export async function GET() {
     console.log('Environment:', process.env.NODE_ENV);
     console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
     
+    // Funcionalidade de inicialização do banco temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de inicialização do banco temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+
+    /*
     // Verificar se estamos em produção (Vercel)
     if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
       return NextResponse.json({
@@ -31,6 +41,7 @@ export async function GET() {
       database: 'PostgreSQL (Neon)',
       timestamp: new Date().toISOString()
     });
+    */
 
   } catch (error) {
     console.error('❌ Erro ao inicializar banco de dados:', error);

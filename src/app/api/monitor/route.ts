@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPriceScraper } from '@/lib/scraper';
-import { EnhancedProductScraper } from '@/lib/enhanced-scraper';
-import { telegramNotifier } from '@/lib/telegram';
+// import { createPriceScraper } from '@/lib/scraper';
+// import { EnhancedProductScraper } from '@/lib/enhanced-scraper';
+// import { telegramNotifier } from '@/lib/telegram';
 import { Product, NotificationSettings } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -23,6 +23,16 @@ export async function POST(request: NextRequest) {
     console.log('Received products:', products.length);
     console.log('Settings:', settings);
 
+    // Funcionalidade de monitoramento temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de monitoramento temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString(),
+      productsReceived: products.length
+    }, { status: 503 });
+
+    /*
     // Initialize Telegram if configured
     if (settings && settings.enabled && settings.telegram && settings.telegram.botToken && settings.telegram.chatId) {
       telegramNotifier.init(settings.telegram);
@@ -96,6 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ results });
+    */
   } catch (error) {
     console.error('Monitor API error:', error);
     return NextResponse.json(

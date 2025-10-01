@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ExaProductSearch } from '@/lib/exa-search';
-import { EnhancedProductScraper } from '@/lib/enhanced-scraper';
+// import { ExaProductSearch } from '@/lib/exa-search';
+// import { EnhancedProductScraper } from '@/lib/enhanced-scraper';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +13,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Funcionalidade de teste Exa temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de teste Exa temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString(),
+      testType: testType || 'search'
+    }, { status: 503 });
+
+    /*
     const results: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       testType: testType || 'search'
@@ -92,6 +102,7 @@ export async function POST(request: NextRequest) {
         data: results
       }, { status: 500 });
     }
+    */
 
   } catch (error) {
     console.error('Erro na requisição:', error);
