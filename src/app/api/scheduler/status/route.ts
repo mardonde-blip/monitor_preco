@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
-import { priceMonitorScheduler } from '@/lib/scheduler';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+// import { priceMonitorScheduler } from '@/lib/scheduler';
+// import { DatabaseAdapter } from '@/lib/database-adapter';
 
 export async function GET() {
   try {
+    // Funcionalidade de status do scheduler temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de status do scheduler temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+
+    /*
     const isRunning = priceMonitorScheduler.isSchedulerRunning();
     const products = await DatabaseAdapter.getAllProducts();
     const notificationsEnabled = await DatabaseAdapter.getSetting('notifications_enabled') === 'true';
@@ -27,6 +36,7 @@ export async function GET() {
         notifications: notificationsEnabled ? 'enabled' : 'disabled'
       }
     });
+    */
   } catch (error) {
     console.error('Erro ao obter status do scheduler:', error);
     return NextResponse.json(

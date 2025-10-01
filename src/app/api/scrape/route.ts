@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPriceScraper } from '@/lib/scraper';
-import { getPlaywrightScraper } from '@/lib/scraper-playwright';
-import { getHttpScraper } from '@/lib/scraper-http';
+// import { createPriceScraper } from '@/lib/scraper';
+// import { getPlaywrightScraper } from '@/lib/scraper-playwright';
+// import { getHttpScraper } from '@/lib/scraper-http';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +11,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'URL é obrigatória' }, { status: 400 });
     }
 
+    // Funcionalidade de scraping temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de scraping temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+
+    /*
     console.log(`🔍 Fazendo scraping da URL: ${url}`);
     
     // Determinar o site baseado na URL
@@ -119,6 +128,7 @@ export async function POST(request: NextRequest) {
       url: url,
       image: result.image
     });
+    */
     
   } catch (error) {
     console.error('❌ Erro na API de scraping:', error);
