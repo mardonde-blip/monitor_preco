@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
-import { priceMonitorScheduler } from '@/lib/scheduler';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+// import { priceMonitorScheduler } from '@/lib/scheduler';
+// import { DatabaseAdapter } from '@/lib/database-adapter';
 
 export async function POST() {
   try {
+    // Funcionalidade de verificação manual temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de verificação manual temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+
+    /*
     const products = await DatabaseAdapter.getAllProducts();
     const notificationsEnabled = await DatabaseAdapter.getSetting('notifications_enabled') === 'true';
     
@@ -35,6 +44,7 @@ export async function POST() {
       timestamp: new Date().toISOString(),
       result: 'Verificação concluída'
     });
+    */
     
   } catch (error) {
     console.error('Erro ao executar verificação manual:', error);
@@ -51,6 +61,15 @@ export async function POST() {
 
 export async function GET() {
   try {
+    // Funcionalidade de status do scheduler temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de status do scheduler temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+
+    /*
     const products = await DatabaseAdapter.getAllProducts();
     const notificationsEnabled = await DatabaseAdapter.getSetting('notifications_enabled') === 'true';
     const isRunning = priceMonitorScheduler.isSchedulerRunning();
@@ -68,6 +87,7 @@ export async function GET() {
         ? 'Notificações não configuradas'
         : 'Pronto para verificar preços'
     });
+    */
     
   } catch (error) {
     console.error('Erro ao verificar status da verificação:', error);

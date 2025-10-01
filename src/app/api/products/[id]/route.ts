@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseAdapter } from '@/lib/database-adapter';
+// import { DatabaseAdapter } from '@/lib/database-adapter';
 import { cookies } from 'next/headers';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +32,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
+    // Funcionalidade de remoção de produto temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de gerenciamento de produtos temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      productId: productId
+    }, { status: 503 });
+
+    /*
     // Verificar se o produto pertence ao usuário e deletar
     const deleted = await DatabaseAdapter.deleteProduct(productId, userId);
     
@@ -45,6 +54,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({
       message: 'Produto removido com sucesso'
     });
+    */
 
   } catch (error) {
     console.error('Erro ao remover produto:', error);

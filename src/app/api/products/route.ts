@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
+// import { getDatabaseAdapter } from '@/lib/database-adapter-fixed';
 import { cookies } from 'next/headers';
-import { createPriceScraper } from '@/lib/scraper';
-import { getHttpScraper } from '@/lib/scraper-http';
+// import { createPriceScraper } from '@/lib/scraper';
+// import { getHttpScraper } from '@/lib/scraper-http';
 
 export async function GET() {
   try {
@@ -25,11 +25,21 @@ export async function GET() {
       );
     }
 
+    // Funcionalidade de listagem de produtos temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de gerenciamento de produtos temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      products: []
+    }, { status: 503 });
+
+    /*
     // Buscar produtos do usuário
     const DatabaseAdapter = getDatabaseAdapter();
     const products = await DatabaseAdapter.getProductsByUserId(userId);
 
     return NextResponse.json({ products });
+    */
 
   } catch (error) {
     console.error('Erro ao buscar produtos:', error);
@@ -87,6 +97,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Funcionalidade de criação de produto temporariamente indisponível
+    return NextResponse.json({
+      success: false,
+      error: 'Sistema de criação de produtos temporariamente indisponível',
+      message: 'Esta funcionalidade está em manutenção. Tente novamente mais tarde.',
+      data: { name, url, target_price, store }
+    }, { status: 503 });
+
+    /*
 
     if (!target_price || typeof target_price !== 'number' || target_price <= 0) {
       return NextResponse.json(
@@ -238,6 +258,7 @@ export async function PUT(request: NextRequest) {
       message: 'Produto atualizado com sucesso',
       product: updatedProduct
     });
+    */
 
   } catch (error) {
     console.error('❌ Erro ao atualizar produto:', error);
