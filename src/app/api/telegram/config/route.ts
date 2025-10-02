@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database-adapter';
-import { TelegramNotifier } from '@/lib/telegram';
+/* import { getDatabase } from '@/lib/database-adapter';
+import { TelegramNotifier } from '@/lib/telegram'; */
 
 // GET - Buscar configuração do usuário
 export async function GET(request: NextRequest) {

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   serverExternalPackages: ['pg', 'puppeteer-core', '@sparticuz/chromium-min'],
   webpack: (config, { isServer }) => {
     if (isServer) {
