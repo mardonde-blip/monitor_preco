@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPriceScraper } from '@/lib/scraper';
+/* import { createPriceScraper } from '@/lib/scraper'; */
 
 interface SearchResult {
   site: string;
@@ -112,22 +112,8 @@ const SITES_CONFIG: SiteConfig[] = [
 async function searchInSite(site: SiteConfig, query: string): Promise<SearchResult[]> {
   try {
     console.log(`🔍 Buscando em ${site.name}...`);
-    
-    // Create a new scraper instance
-    const scraper = createPriceScraper();
-    
-    const results = await scraper.scrapeSearchResults(site.name, query);
-    
-    return results.map(result => ({
-      site: site.name,
-      title: result.title,
-      price: result.price,
-      url: result.url,
-      image: result.image,
-      relevanceScore: result.relevanceScore,
-      combinedScore: result.combinedScore,
-      success: true
-    }));
+    // Funcionalidade desativada temporariamente por manutenção de módulos
+    throw new Error('Scraper indisponível no momento');
   } catch (error) {
     console.error(`❌ Erro ao buscar em ${site.name}:`, error);
     return [{
@@ -136,97 +122,18 @@ async function searchInSite(site: SiteConfig, query: string): Promise<SearchResu
       price: 0,
       url: '',
       success: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
+      error: 'Funcionalidade em manutenção'
     }];
   }
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { query, sites } = await request.json();
-    
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query de busca é obrigatória' }, { status: 400 });
-    }
-
-    console.log(`🛒 Iniciando busca comparativa para: "${query}"`);
-    
-    // Filtrar sites se especificado, senão usar todos
-    const sitesToSearch = sites && Array.isArray(sites) 
-      ? SITES_CONFIG.filter(site => sites.includes(site.name))
-      : SITES_CONFIG;
-
-    // Executar buscas em paralelo
-    const searchPromises = sitesToSearch.map(site => searchInSite(site, query));
-    const searchResults = await Promise.all(searchPromises);
-    
-    // Processar resultados para obter o menor preço de cada site
-    const siteResults: { [siteName: string]: SiteResult } = {};
-    const allValidResults: SearchResult[] = [];
-    
-    searchResults.forEach((siteProducts, index) => {
-      const siteName = sitesToSearch[index].name;
-      const validProducts = siteProducts.filter(product => product.price > 0);
-      
-      if (validProducts.length > 0) {
-        // Encontrar o produto com menor preço do site
-        const cheapestProduct = validProducts.reduce((min, product) => 
-          product.price < min.price ? product : min
-        );
-        
-        siteResults[siteName] = {
-          totalFound: validProducts.length,
-          allProducts: validProducts.sort((a, b) => a.price - b.price),
-          cheapestProduct: cheapestProduct
-        };
-        
-        // Adicionar todos os produtos válidos para a lista geral
-        allValidResults.push(...validProducts);
-      } else {
-        siteResults[siteName] = {
-          totalFound: 0,
-          allProducts: [],
-          cheapestProduct: null
-        };
-      }
-    });
-    
-    // Ordenar todos os resultados por preço
-    const sortedResults = allValidResults.sort((a, b) => a.price - b.price);
-    
-    // Criar resumo dos menores preços por site
-    const siteSummary = Object.entries(siteResults)
-      .filter(([, data]) => data.cheapestProduct)
-      .map(([siteName, data]) => ({
-        site: siteName,
-        cheapestPrice: data.cheapestProduct!.price,
-        cheapestProduct: data.cheapestProduct!,
-        totalProducts: data.totalFound
-      }))
-      .sort((a, b) => a.cheapestPrice - b.cheapestPrice);
-    
-    console.log(`✅ Busca concluída. ${sortedResults.length} produtos encontrados em ${siteSummary.length} sites.`);
-    console.log(`📊 Menores preços por site:`);
-    siteSummary.forEach(summary => {
-      console.log(`   ${summary.site}: R$ ${summary.cheapestPrice.toFixed(2)} (${summary.totalProducts} produtos)`);
-    });
-    
-    return NextResponse.json({
-      query,
-      totalResults: sortedResults.length,
-      results: sortedResults,
-      siteSummary,
-      siteResults,
-      searchedSites: sitesToSearch.map(site => site.name)
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro na API de busca:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      error: 'Funcionalidade de busca está temporariamente em manutenção. Tente novamente mais tarde.'
+    },
+    { status: 503 }
+  );
 }
 
 export async function GET() {
