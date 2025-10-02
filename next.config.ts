@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   eslint: {
@@ -10,6 +11,12 @@ const nextConfig: NextConfig = {
       // Configurações específicas para o servidor
       config.externals.push('pg-native');
     }
+    // Garantir alias '@' -> 'src' para resolver imports '@/...'
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      ['@']: path.resolve(__dirname, 'src'),
+    };
     return config;
   }
 };
