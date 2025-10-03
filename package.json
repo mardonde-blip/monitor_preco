@@ -37,11 +37,11 @@
     "puppeteer-core": "^24.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "@tailwindcss/postcss": "^4",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/node-telegram-bot-api": "^0.64.10",
     "@types/react": "^19",
